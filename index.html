@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kitchen Secret</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon.png">
+    <meta name="theme-color" content="#ff6b6b">
+    
+    <style>
+        :root { 
+            --primary: #ff6b6b; 
+            --bg: #f8f9fa; 
+            --card: #ffffff; 
+            --text: #333333; 
+            --border: #e9ecef;
+            --sub-bg: #fff5f5;
+            --danger: #ff4757;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
+
+        header { 
+            background: var(--primary); 
+            color: white; 
+            padding: 1.2rem 1rem; 
+            position: sticky; 
+            top: 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            z-index: 10;
+        }
+        header h1, header h2 { font-size: 1.2rem; margin: 0; }
+
+        .container { padding: 1rem; max-width: 600px; margin: 0 auto; padding-bottom: 2rem; }
+        .card { background: var(--card); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        h1, h2, h3 { margin-bottom: 0.5rem; }
+
+        button { background: var(--primary); color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        button.outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+        button.danger { background: var(--danger); }
+        button.small { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+
+        textarea, input[type="number"], input[type="text"]:not(.header-input), select { 
+            width: 100%; 
+            padding: 0.8rem; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            margin-bottom: 0.5rem;
+            background: white;
+        }
+        textarea:focus, input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        .ingredient-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0.8rem; 
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .ingredient-item.drag-over { border-top: 2px solid var(--primary); }
+        .ingredient-item:last-child { border-bottom: none; }
+        .sub-recipe-link { color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+        .toggle-icon { display: inline-block; width: 15px; font-size: 0.8rem; transition: transform 0.2s; }
+        .toggle-icon.open { transform: rotate(90deg); }
+
+        .scale-controls { display: flex; align-items: center; gap: 1rem; background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .empty-state { text-align: center; color: #888; padding: 2rem 0; font-style: italic; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; padding: 1rem;
+        }
+        .modal-card {
+            background: var(--card); border-radius: 12px; padding: 1.5rem;
+            width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .header-input {
+            background: transparent; 
+            border: none; 
+            border-bottom: 1px dashed rgba(255,255,255,0.6); 
+            color: white; 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            text-align: center;
+            width: 100%; 
+            outline: none; 
+            padding: 0.2rem; 
+            border-radius: 0;
+            box-shadow: none;
+            -webkit-appearance: none;
+            transition: all 0.2s;
+        }
+        .header-input:focus { 
+            border-bottom-color: white;
+            background: rgba(255,255,255,0.1); 
+            border-radius: 4px; 
+        }
+
+        .header-select {
+            background: transparent;
+            color: white;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+            font-size: 0.9rem;
+            text-align: center;
+            text-align-last: center;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+            padding: 0.2rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .header-select option { color: var(--text); background: white; }
+
+        .action-btn {
+            background: none; border: none; padding: 0; display: flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 4px; cursor: pointer; transition: background 0.2s;
+        }
+        .action-btn:active { background: rgba(0,0,0,0.05); }
+        .btn-edit { color: var(--primary); font-size: 1rem; }
+        .btn-link { color: #2d98da; font-size: 1.1rem; }
+        .btn-remove { color: var(--danger); font-size: 1.3rem; line-height: 1; }
+        .drag-handle { cursor: grab; color: #ccc; margin-right: 10px; font-size: 1.2rem; user-select: none; }
+        .drag-handle:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="modal-root"></div>
+
+    <script>
+        // State Management
+        let recipes = JSON.parse(localStorage.getItem('kitchen_secret_recipes')) || {};
+        let folders = JSON.parse(localStorage.getItem('kitchen_secret_folders')) || ['Cakes', 'Breads', 'Subcomponents'];
+        let currentView = 'home'; // 'home', 'folder', 'recipe'
+        let currentFolder = null;
+        let currentRecipeId = null;
+        let currentScale = 1;
+        let expandedNodes = new Set(); 
+
+        // Initial Data Fallback
+        if (Object.keys(recipes).length === 0) {
+            recipes = {
+                "1": { id: "1", name: "Chocolate Cake", category: "Cakes", ingredients: [
+                    { name: "Chocolate Cake Layer", qty: 2, unit: "g", isSub: true, subId: "2", scaleMode: "multiplier" }
+                ], notes: "Assemble carefully." },
+                "2": { id: "2", name: "Chocolate Cake Layer", category: "Subcomponents", ingredients: [
+                    { name: "Flour", qty: 250, unit: "g", isSub: false },
+                    { name: "Sugar", qty: 200, unit: "g", isSub: false },
+                    { name: "Cocoa powder", qty: 50, unit: "g", isSub: false }
+                ], notes: "Bake at 180°C." }
+            };
+            saveData();
+        }
+
+        // Sync folders with existing recipes
+        function syncFolders() {
+            Object.values(recipes).forEach(r => {
+                if (r.category && !folders.includes(r.category) && r.category !== 'Uncategorized') {
+                    folders.push(r.category);
+                }
+            });
+            if (!folders.includes('Uncategorized')) folders.push('Uncategorized');
+            folders = [...new Set(folders)].sort();
+        }
+        syncFolders();
+
+        function saveData() { 
+            localStorage.setItem('kitchen_secret_recipes', JSON.stringify(recipes)); 
+            localStorage.setItem('kitchen_secret_folders', JSON.stringify(folders));
+        }
+        function generateId() { return Date.now().toString(); }
+
+        // Recursive function to calculate the weight of a recipe in grams
+        function calculateRecipeWeight(recipeId, visited = new Set()) {
+            if (visited.has(recipeId)) return 0;
+            visited.add(recipeId);
+            
+            const recipe = recipes[recipeId];
+            if (!recipe) return 0;
+            
+            let total = 0;
+            recipe.ingredients.forEach(ing => {
+                if (ing.isSub && recipes[ing.subId]) {
+                    if (ing.scaleMode === 'weight') {
+                        total += parseFloat(ing.targetWeight) || 0;
+                    } else {
+                        total += ((parseFloat(ing.qty) || 1) * calculateRecipeWeight(ing.subId, new Set(visited)));
+                    }
+                } else {
+                    total += parseFloat(ing.qty) || 0;
+                }
+            });
+            return total;
+        }
+
+        function getEffectiveMultiplier(ing) {
+            if (ing.isSub && ing.scaleMode === 'weight') {
+                const baseWeight = calculateRecipeWeight(ing.subId);
+                return baseWeight > 0 ? ((parseFloat(ing.targetWeight) || 0) / baseWeight) : 0;
+            }
+            return parseFloat(ing.qty) || 1;
+        }
+
+        const appDiv = document.getElementById('app');
+        const modalRoot = document.getElementById('modal-root');
+
+        function render() {
+            if (currentView === 'home') renderHome();
+            else if (currentView === 'folder') renderFolder(currentFolder);
+            else if (currentView === 'recipe') renderRecipe(currentRecipeId);
+        }
+
+        // --- Folders & Navigation ---
+        function renderHome() {
+            window.scrollTo(0, 0);
+            syncFolders();
+
+            appDiv.innerHTML = `
+                <header>
+                    <h1>Folders</h1>
+                    <div>
+                        <button class="small backup-btn" onclick="exportData()">Export</button>
+                        <input type="file" onchange="importData(event)" style="display:none" id="importFile">
+                        <button class="small backup-btn" onclick="document.getElementById('importFile').click()">Import</button>
+                        <button class="small" onclick="promptAddFolder()">+ Folder</button>
+                    </div>
+                </header>
+                <div class="container">
+                    <div class="card">
+                        ${folders.length === 0 ? '<div class="empty-state">No folders found.</div>' : ''}
+                        ${folders.map(f => {
+                            const count = Object.values(recipes).filter(r => (r.category || 'Uncategorized') === f).length;
+                            return `
+                                <div class="ingredient-item" onclick="goToFolder('${f.replace(/'/g, "\\'")}')" style="cursor:pointer;">
+                                    <div>
+                                        <h3 style="margin:0;">📁 ${f}</h3>
+                                        <small style="color: gray;">${count} items</small>
+                                    </div>
+                                    <span style="color:#aaa;">➔</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFolder(folderName) {
+            window.scrollTo(0, 0);
+            const folderRecipes = Object.values(recipes).filter(r => (r.category || 'Uncategorized') === folderName);
+            
+            appDiv.innerHTML = `
+                <header>
+                    <button class="small outline" style="color:white; border-color:white;" onclick="goHome()">← Back</button>
+                    <h1 style="text-align:center; flex:1; font-size:1.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 0.5rem;">📁 ${folderName}</h1>
+                    <button class="small" onclick="promptAddRecipe('${folderName.replace(/'/g, "\\'")}')">+ Recipe</button>
+                </header>
+                <div class="container">
+                    <div class="card">
+                        ${folderRecipes.length === 0 ? '<div class="empty-state">Folder is empty. Add a recipe!</div>' : ''}
+                        ${folderRecipes.map(r => `
+                            <div class="ingredient-item" onclick="goToRecipe('${r.id}')" style="cursor:pointer;">
+                                <h3 style="margin:0;">${r.name}</h3>
+                                <span style="color:#aaa;">➔</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${folderName !== 'Uncategorized' ? `
+                        <button class="danger outline" style="width:100%; margin-top: 1rem; padding: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        window.goToFolder = (folderName) => { currentView = 'folder'; currentFolder = folderName; render(); };
+        window.goHome = () => { currentView = 'home'; currentFolder = null; currentRecipeId = null; currentScale = 1; expandedNodes.clear(); render(); };
+
+        // --- Drag & Drop ---
+        let draggedIndex = null;
+        window.dragStart = (e, index) => { draggedIndex = index; e.dataTransfer.effectAllowed = "move"; };
+        window.dragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+        window.drop = (e, targetIndex) => {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === targetIndex) return;
+            const ings = recipes[currentRecipeId].ingredients;
+            const movedItem = ings.splice(draggedIndex, 1)[0];
+            ings.splice(targetIndex, 0, movedItem);
+            saveData(); render();
+        };
+
+        function renderIngredientTree(ingredients, parentScale, level, pathId) {
+            let html = '';
+            ingredients.forEach((ing, index) => {
+                const currentPath = `${pathId}-${index}`;
+                const subRecipe = ing.isSub ? recipes[ing.subId] : null;
+                const displayName = ing.isSub ? (subRecipe ? subRecipe.name : `${ing.name} (Missing)`) : ing.name;
+
+                let effectiveMultiplier = getEffectiveMultiplier(ing);
+                let displayValue = 0;
+                let displayUnit = 'g';
+
+                if (ing.isSub) {
+                    if (ing.scaleMode === 'weight') {
+                        displayValue = (ing.targetWeight || 0) * parentScale;
+                        displayUnit = 'g (target)';
+                    } else {
+                        displayValue = (ing.qty || 1) * parentScale;
+                        displayUnit = 'x';
+                    }
+                } else {
+                    displayValue = (ing.qty || 0) * parentScale;
+                    displayUnit = 'g';
+                }
+
+                const passDownScale = effectiveMultiplier * parentScale;
+
+                let actionButtons = '';
+                if (level === 0) {
+                    actionButtons = `
+                        <div style="display:flex; gap:0.2rem; margin-left:0.5rem;">
+                            ${ing.isSub && subRecipe ? `<button class="action-btn btn-link" onclick="goToRecipe('${ing.subId}')" title="Go to Recipe">↗</button>` : ''}
+                            <button class="action-btn btn-edit" onclick="promptEditIngredient('${currentRecipeId}', ${index})" title="Edit">✎</button>
+                            <button class="action-btn btn-remove" onclick="promptRemoveIngredient('${currentRecipeId}', ${index})" title="Remove">×</button>
+                        </div>
+                    `;
+                }
+
+                const dragProps = level === 0 ? `draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})"` : '';
+                
+                html += `
+                    <div class="ingredient-item" ${dragProps} style="margin-left: ${level * 15}px; background: ${ing.isSub && expandedNodes.has(currentPath) ? 'var(--sub-bg)' : 'transparent'}; border-left: ${level > 0 ? '2px solid var(--border)' : 'none'};">
+                        <span style="display:flex; align-items:center;">
+                            ${level === 0 ? '<span class="drag-handle" title="Drag to reorder">☰</span>' : ''}
+                            ${ing.isSub && subRecipe ? `
+                                <span class="sub-recipe-link" onclick="toggleSub('${currentPath}')">
+                                    <span class="toggle-icon ${expandedNodes.has(currentPath) ? 'open' : ''}">▶</span> ${displayName}
+                                </span>
+                            ` : `<span>${displayName}</span>`}
+                        </span>
+                        <span style="display:flex; align-items:center;">
+                            <span><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span>
+                            ${actionButtons}
+                        </span>
+                    </div>
+                `;
+
+                if (ing.isSub && subRecipe && expandedNodes.has(currentPath)) {
+                    html += renderIngredientTree(subRecipe.ingredients, passDownScale, level + 1, currentPath);
+                    const componentTotalWeight = calculateRecipeWeight(subRecipe.id) * passDownScale;
+                    html += `
+                        <div class="ingredient-item" style="margin-left: ${(level + 1) * 15}px; background: var(--sub-bg); font-style: italic; color: #555; border-left: 2px solid var(--primary); border-top: 1px dashed var(--primary);">
+                            <span>↳ Total ${displayName} Weight:</span>
+                            <span><b>${Number.isInteger(componentTotalWeight) ? componentTotalWeight : componentTotalWeight.toFixed(2)}</b> g</span>
+                        </div>
+                    `;
+                }
+            });
+            return html;
+        }
+
+        function renderRecipe(id) {
+            const recipe = recipes[id];
+            if (!recipe) return goHome();
+
+            const totalRecipeWeight = calculateRecipeWeight(id) * currentScale;
+            const currentCat = recipe.category || 'Uncategorized';
+
+            appDiv.innerHTML = `
+                <header style="flex-direction: column; align-items: stretch; padding-bottom: 0.8rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <button class="small outline" style="color:white; border-color:white;" onclick="goToFolder('${currentCat.replace(/'/g, "\\'")}')">← Folder</button>
+                        <div style="flex: 1; margin: 0 1rem;">
+                            <input type="text" class="header-input" value="${recipe.name.replace(/"/g, '&quot;')}" onblur="updateRecipeName('${id}', this.value)" onkeypress="if(event.key === 'Enter') this.blur();">
+                        </div>
+                        <button class="small outline" style="background:transparent; color:white; border-color:white;" onclick="promptDeleteRecipe('${id}')">Delete</button>
+                    </div>
+                    <div style="text-align: center; margin-top: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.8rem; opacity: 0.8;">Folder:</span>
+                        <select class="header-select" onchange="updateRecipeCategory('${id}', this.value)">
+                            ${folders.map(f => `<option value="${f}" ${f === currentCat ? 'selected' : ''}>${f}</option>`).join('')}
+                        </select>
+                    </div>
+                </header>
+                <div class="container">
+                    <div class="scale-controls">
+                        <label style="font-weight:bold; color:var(--primary); white-space:nowrap;">Batch Size (x):</label>
+                        <input type="number" min="1" step="1" value="${currentScale}" 
+                               oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value !== '') setScale(parseInt(this.value));" 
+                               style="font-size:1.2rem; font-weight:bold; text-align:center; margin:0;">
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">
+                            <div>
+                                <h3 style="margin:0;">Ingredients</h3>
+                                <small style="color:var(--primary); font-weight:bold;">Total: ${Number.isInteger(totalRecipeWeight) ? totalRecipeWeight : totalRecipeWeight.toFixed(2)} g</small>
+                            </div>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button class="small outline" onclick="promptAddIngredient('${id}')">+ Ing.</button>
+                                <button class="small outline" onclick="promptAddSubRecipe('${id}')">+ Comp.</button>
+                            </div>
+                        </div>
+                        <div id="ingredients-list">
+                            ${recipe.ingredients.length === 0 ? '<div class="empty-state">No ingredients yet.</div>' : ''}
+                            ${renderIngredientTree(recipe.ingredients, currentScale, 0, 'root')}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Notes</h3>
+                        <textarea rows="5" placeholder="Add preparation notes here..." onblur="updateNotes('${id}', this.value)">${recipe.notes || ''}</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Recipe Actions ---
+        window.toggleSub = (pathId) => { expandedNodes.has(pathId) ? expandedNodes.delete(pathId) : expandedNodes.add(pathId); render(); };
+        window.goToRecipe = (id) => { currentView = 'recipe'; currentRecipeId = id; currentScale = 1; expandedNodes.clear(); render(); };
+        window.setScale = (scale) => { currentScale = scale || 1; render(); };
+        window.updateNotes = (recipeId, text) => { recipes[recipeId].notes = text; saveData(); };
+        
+        window.updateRecipeName = (id, newName) => {
+            const trimmed = newName.trim();
+            if (trimmed && trimmed !== recipes[id].name) { recipes[id].name = trimmed; saveData(); }
+            render(); 
+        };
+        
+        window.updateRecipeCategory = (id, newCat) => {
+            recipes[id].category = newCat;
+            saveData();
+            // Automatically jump back to the target folder view to reflect the move immediately
+            goToFolder(newCat);
+        };
+
+        // --- Modal System ---
+        function closeModal() { modalRoot.innerHTML = ''; }
+
+        window.promptAddFolder = () => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Create New Folder</h3>
+                        <div class="form-group">
+                            <label>Folder Name</label>
+                            <input type="text" id="new-folder-name" placeholder="e.g. Pastries" autofocus>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmAddFolder()">Create</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('new-folder-name').focus(), 100);
+        };
+
+        window.confirmAddFolder = () => {
+            const name = document.getElementById('new-folder-name').value.trim();
+            if (name && !folders.includes(name)) {
+                folders.push(name);
+                folders.sort();
+                saveData(); closeModal(); render();
+            } else if (folders.includes(name)) {
+                showToast("Folder already exists.");
+            }
+        };
+
+        window.promptDeleteFolder = (folderName) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Delete Folder?</h3>
+                        <p>Are you sure you want to delete the folder <b>${folderName}</b>?</p>
+                        <p style="color:var(--danger); font-size:0.9rem;">Recipes inside will be moved to 'Uncategorized'.</p>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button class="danger" onclick="confirmDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.confirmDeleteFolder = (folderName) => {
+            folders = folders.filter(f => f !== folderName);
+            Object.values(recipes).forEach(r => {
+                if (r.category === folderName) r.category = 'Uncategorized';
+            });
+            saveData(); closeModal(); goHome();
+        };
+
+        window.promptAddRecipe = (targetFolder) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Create New Recipe</h3>
+                        <div class="form-group">
+                            <label>Recipe Name</label>
+                            <input type="text" id="new-recipe-name" placeholder="e.g. Chocolate Cake" autofocus>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmAddRecipe('${targetFolder.replace(/'/g, "\\'")}')">Create</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('new-recipe-name').focus(), 100);
+        };
+
+        window.confirmAddRecipe = (targetFolder) => {
+            const name = document.getElementById('new-recipe-name').value.trim();
+            if (name) {
+                const id = generateId();
+                recipes[id] = { id, name, category: targetFolder, ingredients: [], notes: "" };
+                saveData(); closeModal(); goToRecipe(id);
+            }
+        };
+
+        window.promptAddIngredient = (recipeId) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Add Basic Ingredient</h3>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" id="ing-name" placeholder="e.g. Sugar, Flour">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity (grams)</label>
+                            <input type="number" id="ing-qty" value="1" step="0.1" min="0.1">
+                        </div>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmAddIngredient('${recipeId}')">Add</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => document.getElementById('ing-name').focus(), 100);
+        };
+
+        window.confirmAddIngredient = (recipeId) => {
+            const name = document.getElementById('ing-name').value.trim();
+            const qty = parseFloat(document.getElementById('ing-qty').value) || 0;
+            if (!name) return;
+            recipes[recipeId].ingredients.push({ name, qty, unit: 'g', isSub: false, subId: null });
+            saveData(); closeModal(); render();
+        };
+
+        window.promptAddSubRecipe = (recipeId) => {
+            const availableRecipes = Object.values(recipes).filter(r => r.id !== recipeId);
+            if (availableRecipes.length === 0) {
+                showToast("No components available. Create one first!");
+                return;
+            }
+
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Add Component</h3>
+                        <div class="form-group">
+                            <label>Select Component</label>
+                            <select id="sub-recipe-select">
+                                ${availableRecipes.map(r => `<option value="${r.id}">${r.name} (${r.category || 'Uncategorized'})</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Scale By</label>
+                            <select id="sub-scale-mode" onchange="toggleSubScaleMode()">
+                                <option value="multiplier">Multiplier (x)</option>
+                                <option value="weight">Target Total Weight (g)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label id="sub-qty-label">Multiplier</label>
+                            <input type="number" id="sub-qty" value="1" step="0.1" min="0.1">
+                        </div>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmAddSubRecipe('${recipeId}')">Add</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.toggleSubScaleMode = () => {
+            const mode = document.getElementById('sub-scale-mode').value;
+            const label = document.getElementById('sub-qty-label');
+            label.textContent = mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier';
+        };
+
+        window.confirmAddSubRecipe = (recipeId) => {
+            const subId = document.getElementById('sub-recipe-select').value;
+            const mode = document.getElementById('sub-scale-mode').value;
+            const val = parseFloat(document.getElementById('sub-qty').value) || 1;
+            if (!subId) return;
+
+            const ing = { name: recipes[subId].name, unit: 'g', isSub: true, subId: subId, scaleMode: mode };
+            if (mode === 'weight') { ing.targetWeight = val; ing.qty = 1; }
+            else { ing.qty = val; ing.targetWeight = 0; }
+
+            recipes[recipeId].ingredients.push(ing);
+            saveData(); closeModal(); render();
+        };
+
+        window.promptEditIngredient = (recipeId, index) => {
+            const ing = recipes[recipeId].ingredients[index];
+            const isSub = ing.isSub;
+            const displayName = isSub && recipes[ing.subId] ? recipes[ing.subId].name : ing.name;
+
+            let subHtml = '';
+            if (isSub) {
+                const mode = ing.scaleMode || 'multiplier';
+                const val = mode === 'weight' ? (ing.targetWeight || 0) : (ing.qty || 1);
+                subHtml = `
+                    <div class="form-group">
+                        <label>Scale By</label>
+                        <select id="edit-sub-scale-mode" onchange="toggleEditSubScaleMode()">
+                            <option value="multiplier" ${mode === 'multiplier' ? 'selected' : ''}>Multiplier (x)</option>
+                            <option value="weight" ${mode === 'weight' ? 'selected' : ''}>Target Total Weight (g)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label id="edit-sub-qty-label">${mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier'}</label>
+                        <input type="number" id="edit-ing-qty" value="${val}" step="0.1" min="0.1">
+                    </div>
+                `;
+            } else {
+                subHtml = `
+                    <div class="form-group">
+                        <label>Quantity (grams)</label>
+                        <input type="number" id="edit-ing-qty" value="${ing.qty}" step="0.1" min="0.1">
+                    </div>
+                `;
+            }
+
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Edit ${isSub ? 'Component' : 'Ingredient'}</h3>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" id="edit-ing-name" value="${displayName.replace(/"/g, '&quot;')}" ${isSub ? 'disabled' : ''}>
+                        </div>
+                        ${subHtml}
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmEditIngredient('${recipeId}', ${index})">Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            if (!isSub) setTimeout(() => document.getElementById('edit-ing-name').focus(), 100);
+        };
+
+        window.toggleEditSubScaleMode = () => {
+            const mode = document.getElementById('edit-sub-scale-mode').value;
+            const label = document.getElementById('edit-sub-qty-label');
+            label.textContent = mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier';
+        };
+
+        window.confirmEditIngredient = (recipeId, index) => {
+            const ing = recipes[recipeId].ingredients[index];
+            if (!ing.isSub) {
+                const newName = document.getElementById('edit-ing-name').value.trim();
+                if (newName) ing.name = newName;
+                ing.qty = parseFloat(document.getElementById('edit-ing-qty').value) || 0;
+            } else {
+                const mode = document.getElementById('edit-sub-scale-mode').value;
+                const val = parseFloat(document.getElementById('edit-ing-qty').value) || 0;
+                ing.scaleMode = mode;
+                if (mode === 'weight') ing.targetWeight = val;
+                else ing.qty = val;
+            }
+            saveData(); closeModal(); render();
+        };
+
+        window.promptDeleteRecipe = (id) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Delete Recipe?</h3>
+                        <p>Are you sure you want to permanently delete this recipe?</p>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button class="danger" onclick="confirmDeleteRecipe('${id}')">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.confirmDeleteRecipe = (id) => { 
+            const folder = recipes[id].category || 'Uncategorized';
+            delete recipes[id]; 
+            saveData(); 
+            closeModal(); 
+            goToFolder(folder);
+        };
+
+        window.promptRemoveIngredient = (recipeId, index) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h3>Remove Item?</h3>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button class="danger" onclick="confirmRemoveIngredient('${recipeId}', ${index})">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.confirmRemoveIngredient = (recipeId, index) => { recipes[recipeId].ingredients.splice(index, 1); saveData(); closeModal(); render(); };
+
+        // --- Import / Export ---
+        window.exportData = () => {
+            const data = localStorage.getItem('kitchen_secret_recipes');
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'my-recipes-backup.json'; a.click();
+        };
+
+        window.importData = (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                recipes = JSON.parse(e.target.result); 
+                syncFolders(); // Automatically rebuilds the folders array based on the imported recipes
+                saveData(); 
+                render(); 
+            };
+            reader.readAsText(file);
+        };
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+                background: var(--text); color: white; padding: 10px 20px;
+                border-radius: 20px; font-size: 0.9rem; z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transition: opacity 0.3s;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.style.opacity = '1', 10);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        render();
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered successfully!', reg))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

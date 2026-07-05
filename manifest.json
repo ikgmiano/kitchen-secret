@@ -1,0 +1,16 @@
+{
+  "name": "Kitchen Secret",
+  "short_name": "Recipes",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#ff6b6b",
+  "description": "Offline-first recipe manager with dynamic sub-components.",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
