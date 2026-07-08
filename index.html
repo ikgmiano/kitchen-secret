@@ -3,122 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kitchen Secret</title>
+    <title>Forms by Yen</title>
     
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icon.png">
-    <meta name="theme-color" content="#ff6b6b">
+    <meta name="theme-color" content="#3a151b">
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap');
+
         :root { 
-            --primary: #ff6b6b; 
-            --bg: #f8f9fa; 
-            --card: #ffffff; 
-            --text: #333333; 
-            --border: #e9ecef;
-            --sub-bg: #fff5f5;
-            --danger: #ff4757;
+            --primary: #cca76a; /* Gold */
+            --primary-hover: #b59258;
+            --bg: #3a151b; /* Deep Burgundy */
+            --card: #4a1d24; /* Lighter Burgundy for cards */
+            --text: #f4e9d8; /* Off-white / Cream */
+            --text-muted: #cda87c;
+            --border: #632d35;
+            --sub-bg: #321217;
+            --danger: #ff6b6b;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Lato', sans-serif;
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        h1, h2, h3, .serif { font-family: 'Playfair Display', serif; font-weight: normal; }
 
         header { 
-            background: var(--primary); 
-            color: white; 
-            padding: 1.2rem 1rem; 
+            background: var(--bg); 
+            color: var(--primary); 
+            padding: 1.5rem 1rem; 
             position: sticky; 
             top: 0; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            border-bottom: 1px solid var(--border);
             z-index: 10;
         }
-        header h1, header h2 { font-size: 1.2rem; margin: 0; }
+        
+        .brand-title {
+            text-align: center;
+            flex: 1;
+        }
+        .brand-title h1 { font-size: 1.8rem; letter-spacing: 1px; line-height: 1; margin-bottom: 0.2rem; }
+        .brand-title p { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
 
         .container { padding: 1rem; max-width: 600px; margin: 0 auto; padding-bottom: 2rem; }
-        .card { background: var(--card); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        h1, h2, h3 { margin-bottom: 0.5rem; }
+        .card { background: var(--card); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        h2 { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: var(--primary); font-size: 1.3rem; margin-bottom: 0.8rem; }
+        h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
 
-        button { background: var(--primary); color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
-        button:active { opacity: 0.8; }
-        button.outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
-        button.danger { background: var(--danger); }
-        button.small { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        button { 
+            background: var(--primary); 
+            color: var(--bg); 
+            border: none; 
+            padding: 0.8rem 1.2rem; 
+            border-radius: 6px; 
+            font-size: 0.95rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: opacity 0.2s, transform 0.1s; 
+            font-family: 'Lato', sans-serif;
+        }
+        button:active { opacity: 0.8; transform: scale(0.98); }
+        button.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        button.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+        button.small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
 
         textarea, input[type="number"], input[type="text"]:not(.header-input), select { 
             width: 100%; 
             padding: 0.8rem; 
             border: 1px solid var(--border); 
-            border-radius: 8px; 
+            border-radius: 6px; 
             font-size: 1rem; 
             margin-bottom: 0.5rem;
-            background: white;
+            background: var(--sub-bg);
+            color: var(--text);
+            font-family: 'Lato', sans-serif;
         }
         textarea:focus, input:focus, select:focus { outline: none; border-color: var(--primary); }
+        ::placeholder { color: #885b63; }
 
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 0.3rem; font-size: 0.85rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;}
 
         .ingredient-item { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            padding: 0.8rem; 
+            padding: 0.8rem 0.5rem; 
             border-bottom: 1px solid var(--border);
             transition: background 0.2s;
         }
         .ingredient-item.drag-over { border-top: 2px solid var(--primary); }
         .ingredient-item:last-child { border-bottom: none; }
-        .sub-recipe-link { color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+        
+        .sub-recipe-link { color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
         .toggle-icon { display: inline-block; width: 15px; font-size: 0.8rem; transition: transform 0.2s; }
         .toggle-icon.open { transform: rotate(90deg); }
 
-        .scale-controls { display: flex; align-items: center; gap: 1rem; background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .empty-state { text-align: center; color: #888; padding: 2rem 0; font-style: italic; }
+        .scale-controls { display: flex; align-items: center; gap: 1rem; background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; justify-content: space-between;}
+        .scale-controls div { flex: 1; text-align: center; }
+        .scale-controls input { font-size: 1.2rem; font-weight: bold; text-align: center; margin: 0; padding: 0.5rem; color: var(--primary); border-color: var(--primary); }
+
+        .empty-state { text-align: center; color: var(--text-muted); padding: 2rem 0; font-style: italic; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
             display: flex; justify-content: center; align-items: center;
             z-index: 100; padding: 1rem;
         }
         .modal-card {
-            background: var(--card); border-radius: 12px; padding: 1.5rem;
-            width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            background: var(--bg); border: 1px solid var(--primary); border-radius: 12px; padding: 1.5rem;
+            width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             max-height: 90vh; overflow-y: auto;
         }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .header-input {
             background: transparent; 
             border: none; 
-            border-bottom: 1px dashed rgba(255,255,255,0.6); 
-            color: white; 
-            font-size: 1.1rem; 
-            font-weight: bold; 
+            border-bottom: 1px dashed var(--primary); 
+            color: var(--primary); 
+            font-size: 1.5rem; 
+            font-family: 'Playfair Display', serif;
             text-align: center;
             width: 100%; 
             outline: none; 
             padding: 0.2rem; 
             border-radius: 0;
-            box-shadow: none;
-            -webkit-appearance: none;
-            transition: all 0.2s;
         }
-        .header-input:focus { 
-            border-bottom-color: white;
-            background: rgba(255,255,255,0.1); 
-            border-radius: 4px; 
-        }
+        .header-input:focus { border-bottom-style: solid; background: rgba(255,255,255,0.05); }
 
         .header-select {
             background: transparent;
-            color: white;
+            color: var(--text-muted);
             border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.4);
+            border-bottom: 1px solid rgba(204, 167, 106, 0.4);
             font-size: 0.9rem;
             text-align: center;
             text-align-last: center;
@@ -129,18 +160,25 @@
             outline: none;
             cursor: pointer;
         }
-        .header-select option { color: var(--text); background: white; }
+        .header-select option { color: var(--text); background: var(--card); }
 
         .action-btn {
             background: none; border: none; padding: 0; display: flex; align-items: center; justify-content: center;
             width: 28px; height: 28px; border-radius: 4px; cursor: pointer; transition: background 0.2s;
         }
-        .action-btn:active { background: rgba(0,0,0,0.05); }
+        .action-btn:active { background: rgba(255,255,255,0.1); }
         .btn-edit { color: var(--primary); font-size: 1rem; }
-        .btn-link { color: #2d98da; font-size: 1.1rem; }
+        .btn-link { color: #8ecae6; font-size: 1.1rem; }
         .btn-remove { color: var(--danger); font-size: 1.3rem; line-height: 1; }
-        .drag-handle { cursor: grab; color: #ccc; margin-right: 10px; font-size: 1.2rem; user-select: none; }
-        .drag-handle:active { cursor: grabbing; }
+        
+        .reorder-controls { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
+        .reorder-btn { background: var(--sub-bg); color: var(--primary); border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .reorder-btn:active { background: var(--primary); color: var(--bg); }
+        .drag-handle { cursor: grab; color: var(--border); margin-right: 10px; font-size: 1.2rem; user-select: none; display: none; }
+        @media (min-width: 768px) {
+            .drag-handle { display: inline-block; }
+            .reorder-controls { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -154,16 +192,16 @@
         let currentView = 'home'; // 'home', 'folder', 'recipe'
         let currentFolder = null;
         let currentRecipeId = null;
-        let currentScale = 1;
+        let currentScale = 1; // Temporary view multiplier
         let expandedNodes = new Set(); 
 
-        // Initial Data Fallback
+        // Data Migration & Fallback
         if (Object.keys(recipes).length === 0) {
             recipes = {
-                "1": { id: "1", name: "Chocolate Cake", category: "Cakes", ingredients: [
+                "1": { id: "1", name: "Chocolate Cake", category: "Cakes", orderIndex: Date.now(), baseBatch: 1, ingredients: [
                     { name: "Chocolate Cake Layer", qty: 2, unit: "g", isSub: true, subId: "2", scaleMode: "multiplier" }
                 ], notes: "Assemble carefully." },
-                "2": { id: "2", name: "Chocolate Cake Layer", category: "Subcomponents", ingredients: [
+                "2": { id: "2", name: "Chocolate Cake Layer", category: "Subcomponents", orderIndex: Date.now()+1, baseBatch: 4, ingredients: [
                     { name: "Flour", qty: 250, unit: "g", isSub: false },
                     { name: "Sugar", qty: 200, unit: "g", isSub: false },
                     { name: "Cocoa powder", qty: 50, unit: "g", isSub: false }
@@ -172,25 +210,24 @@
             saveData();
         }
 
-        // Sync folders with existing recipes
-        function syncFolders() {
+        function syncDataStructure() {
             Object.values(recipes).forEach(r => {
-                if (r.category && !folders.includes(r.category) && r.category !== 'Uncategorized') {
-                    folders.push(r.category);
-                }
+                if (r.category && !folders.includes(r.category) && r.category !== 'Uncategorized') folders.push(r.category);
+                if (!r.orderIndex) r.orderIndex = Date.now() + Math.random();
+                if (!r.baseBatch) r.baseBatch = 1;
             });
             if (!folders.includes('Uncategorized')) folders.push('Uncategorized');
-            folders = [...new Set(folders)].sort();
+            folders = [...new Set(folders)];
         }
-        syncFolders();
+        syncDataStructure();
 
         function saveData() { 
             localStorage.setItem('kitchen_secret_recipes', JSON.stringify(recipes)); 
             localStorage.setItem('kitchen_secret_folders', JSON.stringify(folders));
         }
-        function generateId() { return Date.now().toString(); }
+        function generateId() { return Date.now().toString() + Math.floor(Math.random()*1000); }
 
-        // Recursive function to calculate the weight of a recipe in grams
+        // Weight & Scaling Core Logic
         function calculateRecipeWeight(recipeId, visited = new Set()) {
             if (visited.has(recipeId)) return 0;
             visited.add(recipeId);
@@ -201,8 +238,12 @@
             let total = 0;
             recipe.ingredients.forEach(ing => {
                 if (ing.isSub && recipes[ing.subId]) {
+                    const subRecipe = recipes[ing.subId];
                     if (ing.scaleMode === 'weight') {
                         total += parseFloat(ing.targetWeight) || 0;
+                    } else if (ing.scaleMode === 'batch') {
+                        const ratio = (parseFloat(ing.targetBatch) || 0) / (parseFloat(subRecipe.baseBatch) || 1);
+                        total += (ratio * calculateRecipeWeight(ing.subId, new Set(visited)));
                     } else {
                         total += ((parseFloat(ing.qty) || 1) * calculateRecipeWeight(ing.subId, new Set(visited)));
                     }
@@ -214,9 +255,15 @@
         }
 
         function getEffectiveMultiplier(ing) {
-            if (ing.isSub && ing.scaleMode === 'weight') {
-                const baseWeight = calculateRecipeWeight(ing.subId);
-                return baseWeight > 0 ? ((parseFloat(ing.targetWeight) || 0) / baseWeight) : 0;
+            if (ing.isSub && recipes[ing.subId]) {
+                const subRecipe = recipes[ing.subId];
+                if (ing.scaleMode === 'weight') {
+                    const baseWeight = calculateRecipeWeight(ing.subId);
+                    return baseWeight > 0 ? ((parseFloat(ing.targetWeight) || 0) / baseWeight) : 0;
+                } else if (ing.scaleMode === 'batch') {
+                    const baseBatch = parseFloat(subRecipe.baseBatch) || 1;
+                    return (parseFloat(ing.targetBatch) || 0) / baseBatch;
+                }
             }
             return parseFloat(ing.qty) || 1;
         }
@@ -230,33 +277,96 @@
             else if (currentView === 'recipe') renderRecipe(currentRecipeId);
         }
 
-        // --- Folders & Navigation ---
+        // --- Drag & Drop (Desktop) ---
+        let draggedIndex = null;
+        window.dragStart = (e, index) => { draggedIndex = index; e.dataTransfer.effectAllowed = "move"; };
+        window.dragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
+        window.drop = (e, targetIndex) => {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === targetIndex) return;
+            
+            if (currentView === 'home') {
+                const moved = folders.splice(draggedIndex, 1)[0];
+                folders.splice(targetIndex, 0, moved);
+            } else if (currentView === 'folder') {
+                // Folder recipe reordering via D&D requires custom logic, let's stick to Up/Down for recipes to avoid sorting bugs
+            } else if (currentView === 'recipe') {
+                const ings = recipes[currentRecipeId].ingredients;
+                const moved = ings.splice(draggedIndex, 1)[0];
+                ings.splice(targetIndex, 0, moved);
+            }
+            saveData(); render();
+        };
+
+        // --- Up/Down Mobile Reordering ---
+        window.moveItem = (type, index, direction) => {
+            if (type === 'folder') {
+                if (index + direction < 0 || index + direction >= folders.length) return;
+                const temp = folders[index];
+                folders[index] = folders[index + direction];
+                folders[index + direction] = temp;
+            } else if (type === 'recipeList') {
+                const folderRecipes = Object.values(recipes)
+                    .filter(r => (r.category || 'Uncategorized') === currentFolder)
+                    .sort((a,b) => a.orderIndex - b.orderIndex);
+                if (index + direction < 0 || index + direction >= folderRecipes.length) return;
+                
+                const currentId = folderRecipes[index].id;
+                const targetId = folderRecipes[index + direction].id;
+                
+                const tempOrder = recipes[currentId].orderIndex;
+                recipes[currentId].orderIndex = recipes[targetId].orderIndex;
+                recipes[targetId].orderIndex = tempOrder;
+            } else if (type === 'ingredient') {
+                const ings = recipes[currentRecipeId].ingredients;
+                if (index + direction < 0 || index + direction >= ings.length) return;
+                const temp = ings[index];
+                ings[index] = ings[index + direction];
+                ings[index + direction] = temp;
+            }
+            saveData(); render();
+        };
+
+        // --- Views ---
         function renderHome() {
             window.scrollTo(0, 0);
-            syncFolders();
+            syncDataStructure();
 
             appDiv.innerHTML = `
                 <header>
-                    <h1>Folders</h1>
-                    <div>
-                        <button class="small backup-btn" onclick="exportData()">Export</button>
-                        <input type="file" onchange="importData(event)" style="display:none" id="importFile">
-                        <button class="small backup-btn" onclick="document.getElementById('importFile').click()">Import</button>
+                    <button class="small outline" onclick="document.getElementById('importFile').click()">Import</button>
+                    <input type="file" onchange="importData(event)" style="display:none" id="importFile">
+                    
+                    <div class="brand-title">
+                        <h1>forms by yen</h1>
+                        <p>curated flavors</p>
+                    </div>
+
+                    <button class="small outline" onclick="exportData()">Export</button>
+                </header>
+                <div class="container" style="margin-top: 1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                        <h2>Categories</h2>
                         <button class="small" onclick="promptAddFolder()">+ Folder</button>
                     </div>
-                </header>
-                <div class="container">
                     <div class="card">
                         ${folders.length === 0 ? '<div class="empty-state">No folders found.</div>' : ''}
-                        ${folders.map(f => {
+                        ${folders.map((f, i) => {
                             const count = Object.values(recipes).filter(r => (r.category || 'Uncategorized') === f).length;
                             return `
-                                <div class="ingredient-item" onclick="goToFolder('${f.replace(/'/g, "\\'")}')" style="cursor:pointer;">
-                                    <div>
-                                        <h3 style="margin:0;">📁 ${f}</h3>
-                                        <small style="color: gray;">${count} items</small>
+                                <div class="ingredient-item" draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="drop(event, ${i})">
+                                    <div style="display:flex; align-items:center;">
+                                        <div class="reorder-controls">
+                                            <button class="reorder-btn" onclick="moveItem('folder', ${i}, -1)" ${i===0?'disabled':''}>▲</button>
+                                            <button class="reorder-btn" onclick="moveItem('folder', ${i}, 1)" ${i===folders.length-1?'disabled':''}>▼</button>
+                                        </div>
+                                        <span class="drag-handle">☰</span>
+                                        <div onclick="goToFolder('${f.replace(/'/g, "\\'")}')" style="cursor:pointer;">
+                                            <h3 style="margin:0; font-family:'Playfair Display', serif;">${f}</h3>
+                                            <small style="color: var(--text-muted);">${count} items</small>
+                                        </div>
                                     </div>
-                                    <span style="color:#aaa;">➔</span>
+                                    <span style="color:var(--primary);" onclick="goToFolder('${f.replace(/'/g, "\\'")}')" style="cursor:pointer;">➔</span>
                                 </div>
                             `;
                         }).join('')}
@@ -267,46 +377,41 @@
 
         function renderFolder(folderName) {
             window.scrollTo(0, 0);
-            const folderRecipes = Object.values(recipes).filter(r => (r.category || 'Uncategorized') === folderName);
+            const folderRecipes = Object.values(recipes)
+                .filter(r => (r.category || 'Uncategorized') === folderName)
+                .sort((a,b) => a.orderIndex - b.orderIndex);
             
             appDiv.innerHTML = `
                 <header>
-                    <button class="small outline" style="color:white; border-color:white;" onclick="goHome()">← Back</button>
-                    <h1 style="text-align:center; flex:1; font-size:1.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 0.5rem;">📁 ${folderName}</h1>
+                    <button class="small outline" onclick="goHome()">← Back</button>
+                    <h1 style="text-align:center; flex:1; font-size:1.4rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 0.5rem; font-family:'Playfair Display', serif;">${folderName}</h1>
                     <button class="small" onclick="promptAddRecipe('${folderName.replace(/'/g, "\\'")}')">+ Recipe</button>
                 </header>
-                <div class="container">
+                <div class="container" style="margin-top: 1rem;">
                     <div class="card">
                         ${folderRecipes.length === 0 ? '<div class="empty-state">Folder is empty. Add a recipe!</div>' : ''}
-                        ${folderRecipes.map(r => `
-                            <div class="ingredient-item" onclick="goToRecipe('${r.id}')" style="cursor:pointer;">
-                                <h3 style="margin:0;">${r.name}</h3>
-                                <span style="color:#aaa;">➔</span>
+                        ${folderRecipes.map((r, i) => `
+                            <div class="ingredient-item">
+                                <div style="display:flex; align-items:center; flex:1;">
+                                    <div class="reorder-controls">
+                                        <button class="reorder-btn" onclick="moveItem('recipeList', ${i}, -1)" ${i===0?'disabled':''}>▲</button>
+                                        <button class="reorder-btn" onclick="moveItem('recipeList', ${i}, 1)" ${i===folderRecipes.length-1?'disabled':''}>▼</button>
+                                    </div>
+                                    <div onclick="goToRecipe('${r.id}')" style="cursor:pointer; flex:1;">
+                                        <h3 style="margin:0; color:var(--text);">${r.name}</h3>
+                                        <small style="color:var(--text-muted);">Yield: ${r.baseBatch}</small>
+                                    </div>
+                                </div>
+                                <span style="color:var(--primary); cursor:pointer;" onclick="goToRecipe('${r.id}')">➔</span>
                             </div>
                         `).join('')}
                     </div>
                     ${folderName !== 'Uncategorized' ? `
-                        <button class="danger outline" style="width:100%; margin-top: 1rem; padding: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger);" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
+                        <button class="danger outline" style="width:100%; margin-top: 1rem; padding: 0.8rem;" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
                     ` : ''}
                 </div>
             `;
         }
-
-        window.goToFolder = (folderName) => { currentView = 'folder'; currentFolder = folderName; render(); };
-        window.goHome = () => { currentView = 'home'; currentFolder = null; currentRecipeId = null; currentScale = 1; expandedNodes.clear(); render(); };
-
-        // --- Drag & Drop ---
-        let draggedIndex = null;
-        window.dragStart = (e, index) => { draggedIndex = index; e.dataTransfer.effectAllowed = "move"; };
-        window.dragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
-        window.drop = (e, targetIndex) => {
-            e.preventDefault();
-            if (draggedIndex === null || draggedIndex === targetIndex) return;
-            const ings = recipes[currentRecipeId].ingredients;
-            const movedItem = ings.splice(draggedIndex, 1)[0];
-            ings.splice(targetIndex, 0, movedItem);
-            saveData(); render();
-        };
 
         function renderIngredientTree(ingredients, parentScale, level, pathId) {
             let html = '';
@@ -323,6 +428,9 @@
                     if (ing.scaleMode === 'weight') {
                         displayValue = (ing.targetWeight || 0) * parentScale;
                         displayUnit = 'g (target)';
+                    } else if (ing.scaleMode === 'batch') {
+                        displayValue = (ing.targetBatch || 0) * parentScale;
+                        displayUnit = 'batch';
                     } else {
                         displayValue = (ing.qty || 1) * parentScale;
                         displayUnit = 'x';
@@ -348,9 +456,15 @@
                 const dragProps = level === 0 ? `draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})"` : '';
                 
                 html += `
-                    <div class="ingredient-item" ${dragProps} style="margin-left: ${level * 15}px; background: ${ing.isSub && expandedNodes.has(currentPath) ? 'var(--sub-bg)' : 'transparent'}; border-left: ${level > 0 ? '2px solid var(--border)' : 'none'};">
+                    <div class="ingredient-item" ${dragProps} style="margin-left: ${level * 10}px; background: ${ing.isSub && expandedNodes.has(currentPath) ? 'var(--sub-bg)' : 'transparent'}; border-left: ${level > 0 ? '1px solid var(--border)' : 'none'};">
                         <span style="display:flex; align-items:center;">
-                            ${level === 0 ? '<span class="drag-handle" title="Drag to reorder">☰</span>' : ''}
+                            ${level === 0 ? `
+                                <div class="reorder-controls">
+                                    <button class="reorder-btn" onclick="moveItem('ingredient', ${index}, -1)" ${index===0?'disabled':''}>▲</button>
+                                    <button class="reorder-btn" onclick="moveItem('ingredient', ${index}, 1)" ${index===ingredients.length-1?'disabled':''}>▼</button>
+                                </div>
+                                <span class="drag-handle" title="Drag to reorder">☰</span>
+                            ` : ''}
                             ${ing.isSub && subRecipe ? `
                                 <span class="sub-recipe-link" onclick="toggleSub('${currentPath}')">
                                     <span class="toggle-icon ${expandedNodes.has(currentPath) ? 'open' : ''}">▶</span> ${displayName}
@@ -358,7 +472,7 @@
                             ` : `<span>${displayName}</span>`}
                         </span>
                         <span style="display:flex; align-items:center;">
-                            <span><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span>
+                            <span style="color:var(--primary);"><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span>
                             ${actionButtons}
                         </span>
                     </div>
@@ -368,7 +482,7 @@
                     html += renderIngredientTree(subRecipe.ingredients, passDownScale, level + 1, currentPath);
                     const componentTotalWeight = calculateRecipeWeight(subRecipe.id) * passDownScale;
                     html += `
-                        <div class="ingredient-item" style="margin-left: ${(level + 1) * 15}px; background: var(--sub-bg); font-style: italic; color: #555; border-left: 2px solid var(--primary); border-top: 1px dashed var(--primary);">
+                        <div class="ingredient-item" style="margin-left: ${(level + 1) * 10}px; background: var(--sub-bg); font-style: italic; color: var(--text-muted); border-left: 1px solid var(--primary); border-top: 1px dashed var(--border);">
                             <span>↳ Total ${displayName} Weight:</span>
                             <span><b>${Number.isInteger(componentTotalWeight) ? componentTotalWeight : componentTotalWeight.toFixed(2)}</b> g</span>
                         </div>
@@ -388,32 +502,44 @@
             appDiv.innerHTML = `
                 <header style="flex-direction: column; align-items: stretch; padding-bottom: 0.8rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <button class="small outline" style="color:white; border-color:white;" onclick="goToFolder('${currentCat.replace(/'/g, "\\'")}')">← Folder</button>
+                        <button class="small outline" onclick="goToFolder('${currentCat.replace(/'/g, "\\'")}')">← Folder</button>
                         <div style="flex: 1; margin: 0 1rem;">
                             <input type="text" class="header-input" value="${recipe.name.replace(/"/g, '&quot;')}" onblur="updateRecipeName('${id}', this.value)" onkeypress="if(event.key === 'Enter') this.blur();">
                         </div>
-                        <button class="small outline" style="background:transparent; color:white; border-color:white;" onclick="promptDeleteRecipe('${id}')">Delete</button>
+                        <div style="display:flex; gap:0.3rem;">
+                            <button class="small outline" onclick="promptCopyRecipe('${id}')">Copy</button>
+                            <button class="small outline danger" style="border-color:var(--danger); color:var(--danger);" onclick="promptDeleteRecipe('${id}')">Del</button>
+                        </div>
                     </div>
                     <div style="text-align: center; margin-top: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 0.8rem; opacity: 0.8;">Folder:</span>
+                        <span style="font-size: 0.8rem; opacity: 0.8; color:var(--text-muted);">Folder:</span>
                         <select class="header-select" onchange="updateRecipeCategory('${id}', this.value)">
                             ${folders.map(f => `<option value="${f}" ${f === currentCat ? 'selected' : ''}>${f}</option>`).join('')}
                         </select>
                     </div>
                 </header>
-                <div class="container">
+                <div class="container" style="margin-top: 1rem;">
+                    
                     <div class="scale-controls">
-                        <label style="font-weight:bold; color:var(--primary); white-space:nowrap;">Batch Size (x):</label>
-                        <input type="number" min="1" step="1" value="${currentScale}" 
-                               oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value !== '') setScale(parseInt(this.value));" 
-                               style="font-size:1.2rem; font-weight:bold; text-align:center; margin:0;">
+                        <div>
+                            <label style="font-weight:bold; color:var(--primary); font-size:0.8rem; display:block;">Base Yield / Batch</label>
+                            <input type="number" min="0.1" step="0.1" value="${recipe.baseBatch || 1}" 
+                                   onblur="updateBaseBatch('${id}', this.value)" 
+                                   onkeypress="if(event.key === 'Enter') this.blur();">
+                        </div>
+                        <div style="font-size: 1.5rem; color: var(--border); padding-top: 1rem;">×</div>
+                        <div>
+                            <label style="font-weight:bold; color:var(--primary); font-size:0.8rem; display:block;">View Multiplier</label>
+                            <input type="number" min="0.1" step="0.1" value="${currentScale}" 
+                                   oninput="if(this.value !== '') setScale(parseFloat(this.value));">
+                        </div>
                     </div>
 
                     <div class="card">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
                             <div>
-                                <h3 style="margin:0;">Ingredients</h3>
-                                <small style="color:var(--primary); font-weight:bold;">Total: ${Number.isInteger(totalRecipeWeight) ? totalRecipeWeight : totalRecipeWeight.toFixed(2)} g</small>
+                                <h2 style="margin:0; border:none; padding:0;">Ingredients</h2>
+                                <small style="color:var(--text-muted); font-weight:bold;">Total: ${Number.isInteger(totalRecipeWeight) ? totalRecipeWeight : totalRecipeWeight.toFixed(2)} g</small>
                             </div>
                             <div style="display:flex; gap:0.5rem;">
                                 <button class="small outline" onclick="promptAddIngredient('${id}')">+ Ing.</button>
@@ -427,8 +553,8 @@
                     </div>
 
                     <div class="card">
-                        <h3>Notes</h3>
-                        <textarea rows="5" placeholder="Add preparation notes here..." onblur="updateNotes('${id}', this.value)">${recipe.notes || ''}</textarea>
+                        <h2>Notes</h2>
+                        <textarea rows="4" placeholder="Add preparation notes here..." onblur="updateNotes('${id}', this.value)">${recipe.notes || ''}</textarea>
                     </div>
                 </div>
             `;
@@ -436,6 +562,8 @@
 
         // --- Recipe Actions ---
         window.toggleSub = (pathId) => { expandedNodes.has(pathId) ? expandedNodes.delete(pathId) : expandedNodes.add(pathId); render(); };
+        window.goToFolder = (folderName) => { currentView = 'folder'; currentFolder = folderName; render(); };
+        window.goHome = () => { currentView = 'home'; currentFolder = null; currentRecipeId = null; currentScale = 1; expandedNodes.clear(); render(); };
         window.goToRecipe = (id) => { currentView = 'recipe'; currentRecipeId = id; currentScale = 1; expandedNodes.clear(); render(); };
         window.setScale = (scale) => { currentScale = scale || 1; render(); };
         window.updateNotes = (recipeId, text) => { recipes[recipeId].notes = text; saveData(); };
@@ -446,11 +574,30 @@
             render(); 
         };
         
+        window.updateBaseBatch = (id, val) => {
+            const num = parseFloat(val) || 1;
+            recipes[id].baseBatch = num;
+            saveData();
+            render();
+        }
+
         window.updateRecipeCategory = (id, newCat) => {
             recipes[id].category = newCat;
             saveData();
-            // Automatically jump back to the target folder view to reflect the move immediately
             goToFolder(newCat);
+        };
+
+        window.promptCopyRecipe = (id) => {
+            const original = recipes[id];
+            const newId = generateId();
+            const copy = JSON.parse(JSON.stringify(original));
+            copy.id = newId;
+            copy.name = copy.name + " (Copy)";
+            copy.orderIndex = Date.now();
+            recipes[newId] = copy;
+            saveData();
+            showToast("Recipe duplicated!");
+            goToRecipe(newId);
         };
 
         // --- Modal System ---
@@ -460,9 +607,8 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Create New Folder</h3>
+                        <h2 style="border:none;">Create Folder</h2>
                         <div class="form-group">
-                            <label>Folder Name</label>
                             <input type="text" id="new-folder-name" placeholder="e.g. Pastries" autofocus>
                         </div>
                         <div class="modal-actions">
@@ -479,7 +625,6 @@
             const name = document.getElementById('new-folder-name').value.trim();
             if (name && !folders.includes(name)) {
                 folders.push(name);
-                folders.sort();
                 saveData(); closeModal(); render();
             } else if (folders.includes(name)) {
                 showToast("Folder already exists.");
@@ -490,9 +635,9 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Delete Folder?</h3>
-                        <p>Are you sure you want to delete the folder <b>${folderName}</b>?</p>
-                        <p style="color:var(--danger); font-size:0.9rem;">Recipes inside will be moved to 'Uncategorized'.</p>
+                        <h2 style="border:none; color:var(--danger);">Delete Folder?</h2>
+                        <p style="margin-bottom:1rem;">Are you sure you want to delete <b>${folderName}</b>?</p>
+                        <p style="color:var(--text-muted); font-size:0.85rem;">Recipes inside will be moved to 'Uncategorized'.</p>
                         <div class="modal-actions">
                             <button class="outline" onclick="closeModal()">Cancel</button>
                             <button class="danger" onclick="confirmDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete</button>
@@ -514,9 +659,8 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Create New Recipe</h3>
+                        <h2 style="border:none;">Create Recipe</h2>
                         <div class="form-group">
-                            <label>Recipe Name</label>
                             <input type="text" id="new-recipe-name" placeholder="e.g. Chocolate Cake" autofocus>
                         </div>
                         <div class="modal-actions">
@@ -533,7 +677,7 @@
             const name = document.getElementById('new-recipe-name').value.trim();
             if (name) {
                 const id = generateId();
-                recipes[id] = { id, name, category: targetFolder, ingredients: [], notes: "" };
+                recipes[id] = { id, name, category: targetFolder, orderIndex: Date.now(), baseBatch: 1, ingredients: [], notes: "" };
                 saveData(); closeModal(); goToRecipe(id);
             }
         };
@@ -542,7 +686,7 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Add Basic Ingredient</h3>
+                        <h2 style="border:none;">Add Ingredient</h2>
                         <div class="form-group">
                             <label>Name</label>
                             <input type="text" id="ing-name" placeholder="e.g. Sugar, Flour">
@@ -579,22 +723,23 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Add Component</h3>
+                        <h2 style="border:none;">Add Component</h2>
                         <div class="form-group">
                             <label>Select Component</label>
-                            <select id="sub-recipe-select">
-                                ${availableRecipes.map(r => `<option value="${r.id}">${r.name} (${r.category || 'Uncategorized'})</option>`).join('')}
+                            <select id="sub-recipe-select" onchange="updateSubAddDefaults()">
+                                ${availableRecipes.map(r => `<option value="${r.id}" data-batch="${r.baseBatch||1}">${r.name} (${r.category || 'Uncategorized'})</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Scale By</label>
                             <select id="sub-scale-mode" onchange="toggleSubScaleMode()">
+                                <option value="batch">Target Batch Size</option>
                                 <option value="multiplier">Multiplier (x)</option>
                                 <option value="weight">Target Total Weight (g)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label id="sub-qty-label">Multiplier</label>
+                            <label id="sub-qty-label">Target Batch</label>
                             <input type="number" id="sub-qty" value="1" step="0.1" min="0.1">
                         </div>
                         <div class="modal-actions">
@@ -604,12 +749,33 @@
                     </div>
                 </div>
             `;
+            updateSubAddDefaults();
+        };
+
+        window.updateSubAddDefaults = () => {
+            const select = document.getElementById('sub-recipe-select');
+            const mode = document.getElementById('sub-scale-mode').value;
+            if (mode === 'batch' && select.options.length > 0) {
+                const batch = select.options[select.selectedIndex].getAttribute('data-batch');
+                document.getElementById('sub-qty').value = batch;
+            }
         };
 
         window.toggleSubScaleMode = () => {
             const mode = document.getElementById('sub-scale-mode').value;
             const label = document.getElementById('sub-qty-label');
-            label.textContent = mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier';
+            const input = document.getElementById('sub-qty');
+            
+            if (mode === 'weight') {
+                label.textContent = 'Target Total Weight (g)';
+                input.value = 100;
+            } else if (mode === 'multiplier') {
+                label.textContent = 'Multiplier (x)';
+                input.value = 1;
+            } else if (mode === 'batch') {
+                label.textContent = 'Target Batch';
+                updateSubAddDefaults();
+            }
         };
 
         window.confirmAddSubRecipe = (recipeId) => {
@@ -620,6 +786,7 @@
 
             const ing = { name: recipes[subId].name, unit: 'g', isSub: true, subId: subId, scaleMode: mode };
             if (mode === 'weight') { ing.targetWeight = val; ing.qty = 1; }
+            else if (mode === 'batch') { ing.targetBatch = val; ing.qty = 1; }
             else { ing.qty = val; ing.targetWeight = 0; }
 
             recipes[recipeId].ingredients.push(ing);
@@ -629,22 +796,29 @@
         window.promptEditIngredient = (recipeId, index) => {
             const ing = recipes[recipeId].ingredients[index];
             const isSub = ing.isSub;
-            const displayName = isSub && recipes[ing.subId] ? recipes[ing.subId].name : ing.name;
+            const subRecipe = isSub ? recipes[ing.subId] : null;
+            const displayName = isSub && subRecipe ? subRecipe.name : ing.name;
 
             let subHtml = '';
             if (isSub) {
                 const mode = ing.scaleMode || 'multiplier';
-                const val = mode === 'weight' ? (ing.targetWeight || 0) : (ing.qty || 1);
+                let val = 1;
+                let label = 'Multiplier (x)';
+                if (mode === 'weight') { val = ing.targetWeight || 0; label = 'Target Total Weight (g)'; }
+                else if (mode === 'batch') { val = ing.targetBatch || subRecipe?.baseBatch || 1; label = 'Target Batch'; }
+                else { val = ing.qty || 1; }
+                
                 subHtml = `
                     <div class="form-group">
                         <label>Scale By</label>
                         <select id="edit-sub-scale-mode" onchange="toggleEditSubScaleMode()">
+                            <option value="batch" ${mode === 'batch' ? 'selected' : ''}>Target Batch Size</option>
                             <option value="multiplier" ${mode === 'multiplier' ? 'selected' : ''}>Multiplier (x)</option>
                             <option value="weight" ${mode === 'weight' ? 'selected' : ''}>Target Total Weight (g)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label id="edit-sub-qty-label">${mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier'}</label>
+                        <label id="edit-sub-qty-label">${label}</label>
                         <input type="number" id="edit-ing-qty" value="${val}" step="0.1" min="0.1">
                     </div>
                 `;
@@ -660,7 +834,7 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Edit ${isSub ? 'Component' : 'Ingredient'}</h3>
+                        <h2 style="border:none;">Edit ${isSub ? 'Component' : 'Ingredient'}</h2>
                         <div class="form-group">
                             <label>Name</label>
                             <input type="text" id="edit-ing-name" value="${displayName.replace(/"/g, '&quot;')}" ${isSub ? 'disabled' : ''}>
@@ -679,7 +853,9 @@
         window.toggleEditSubScaleMode = () => {
             const mode = document.getElementById('edit-sub-scale-mode').value;
             const label = document.getElementById('edit-sub-qty-label');
-            label.textContent = mode === 'weight' ? 'Target Total Weight (g)' : 'Multiplier';
+            if (mode === 'weight') label.textContent = 'Target Total Weight (g)';
+            else if (mode === 'batch') label.textContent = 'Target Batch Size';
+            else label.textContent = 'Multiplier (x)';
         };
 
         window.confirmEditIngredient = (recipeId, index) => {
@@ -693,6 +869,7 @@
                 const val = parseFloat(document.getElementById('edit-ing-qty').value) || 0;
                 ing.scaleMode = mode;
                 if (mode === 'weight') ing.targetWeight = val;
+                else if (mode === 'batch') ing.targetBatch = val;
                 else ing.qty = val;
             }
             saveData(); closeModal(); render();
@@ -702,7 +879,7 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Delete Recipe?</h3>
+                        <h2 style="border:none; color:var(--danger);">Delete Recipe?</h2>
                         <p>Are you sure you want to permanently delete this recipe?</p>
                         <div class="modal-actions">
                             <button class="outline" onclick="closeModal()">Cancel</button>
@@ -725,7 +902,7 @@
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
                     <div class="modal-card" onclick="event.stopPropagation()">
-                        <h3>Remove Item?</h3>
+                        <h2 style="border:none; color:var(--danger);">Remove Item?</h2>
                         <div class="modal-actions">
                             <button class="outline" onclick="closeModal()">Cancel</button>
                             <button class="danger" onclick="confirmRemoveIngredient('${recipeId}', ${index})">Remove</button>
@@ -743,7 +920,7 @@
             const blob = new Blob([data], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'my-recipes-backup.json'; a.click();
+            a.href = url; a.download = 'forms-by-yen-recipes.json'; a.click();
         };
 
         window.importData = (event) => {
@@ -751,9 +928,10 @@
             const reader = new FileReader();
             reader.onload = (e) => { 
                 recipes = JSON.parse(e.target.result); 
-                syncFolders(); // Automatically rebuilds the folders array based on the imported recipes
+                syncDataStructure(); 
                 saveData(); 
                 render(); 
+                showToast("Import successful!");
             };
             reader.readAsText(file);
         };
@@ -763,9 +941,9 @@
             toast.textContent = message;
             toast.style.cssText = `
                 position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-                background: var(--text); color: white; padding: 10px 20px;
-                border-radius: 20px; font-size: 0.9rem; z-index: 1000;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transition: opacity 0.3s;
+                background: var(--primary); color: var(--bg); padding: 12px 24px;
+                border-radius: 30px; font-weight: bold; font-size: 0.95rem; z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s;
             `;
             document.body.appendChild(toast);
             setTimeout(() => toast.style.opacity = '1', 10);
