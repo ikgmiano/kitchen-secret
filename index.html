@@ -106,7 +106,7 @@
         .ingredient-item:last-child { border-bottom: none; }
         
         .sub-recipe-link { color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
-        .toggle-icon { display: inline-block; width: 15px; font-size: 0.8rem; transition: transform 0.2s; }
+        .toggle-icon { display: inline-block; width: 15px; display: flex; align-items: center; transition: transform 0.2s; }
         .toggle-icon.open { transform: rotate(90deg); }
 
         .scale-controls { display: flex; align-items: center; gap: 1rem; background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; justify-content: space-between;}
@@ -167,9 +167,9 @@
             width: 28px; height: 28px; border-radius: 4px; cursor: pointer; transition: background 0.2s;
         }
         .action-btn:active { background: rgba(255,255,255,0.1); }
-        .btn-edit { color: var(--primary); font-size: 1rem; }
-        .btn-link { color: #8ecae6; font-size: 1.1rem; }
-        .btn-remove { color: var(--danger); font-size: 1.3rem; line-height: 1; }
+        .btn-edit { color: var(--primary); }
+        .btn-link { color: #8ecae6; }
+        .btn-remove { color: var(--danger); }
         
         .reorder-controls { display: flex; flex-direction: column; gap: 0; margin-right: 12px; }
         .reorder-btn { background: transparent; color: var(--text-muted); border: none; padding: 2px 6px; font-size: 0.75rem; cursor: pointer; opacity: 0.7; transition: color 0.2s; }
@@ -418,6 +418,13 @@
 
         function renderIngredientTree(ingredients, parentScale, level, pathId) {
             let html = '';
+            
+            // Replaced Emojis with elegant inline SVGs
+            const linkIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+            const editIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>`;
+            const deleteIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            const chevronIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
             ingredients.forEach((ing, index) => {
                 const currentPath = `${pathId}-${index}`;
                 const subRecipe = ing.isSub ? recipes[ing.subId] : null;
@@ -426,11 +433,13 @@
                 let effectiveMultiplier = getEffectiveMultiplier(ing);
                 let displayValue = 0;
                 let displayUnit = 'g';
+                let isTargetWeight = false;
 
                 if (ing.isSub) {
                     if (ing.scaleMode === 'weight') {
                         displayValue = (ing.targetWeight || 0) * parentScale;
-                        displayUnit = 'g (target)';
+                        displayUnit = 'g';
+                        isTargetWeight = true; // Flag for layout change
                     } else if (ing.scaleMode === 'batch') {
                         displayValue = (ing.targetBatch || 0) * parentScale;
                         displayUnit = 'batch';
@@ -443,15 +452,23 @@
                     displayUnit = 'g';
                 }
 
+                // Layout fix for Target Gram
+                let valueHtml = '';
+                if (isTargetWeight) {
+                    valueHtml = `<div style="text-align: right; line-height: 1.1;"><span style="color:var(--primary);"><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span><br><small style="font-size: 0.7rem; color: var(--text-muted);">(target)</small></div>`;
+                } else {
+                    valueHtml = `<span style="color:var(--primary);"><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span>`;
+                }
+
                 const passDownScale = effectiveMultiplier * parentScale;
 
                 let actionButtons = '';
                 if (level === 0) {
                     actionButtons = `
-                        <div style="display:flex; gap:0.2rem; margin-left:0.5rem;">
-                            ${ing.isSub && subRecipe ? `<button class="action-btn btn-link" onclick="goToRecipe('${ing.subId}')" title="Go to Recipe">↗</button>` : ''}
-                            <button class="action-btn btn-edit" onclick="promptEditIngredient('${currentRecipeId}', ${index})" title="Edit">✎</button>
-                            <button class="action-btn btn-remove" onclick="promptRemoveIngredient('${currentRecipeId}', ${index})" title="Remove">×</button>
+                        <div style="display:flex; gap:0.4rem; margin-left:0.8rem; align-items:center;">
+                            ${ing.isSub && subRecipe ? `<button class="action-btn btn-link" onclick="goToRecipe('${ing.subId}')" title="Go to Recipe">${linkIcon}</button>` : ''}
+                            <button class="action-btn btn-edit" onclick="promptEditIngredient('${currentRecipeId}', ${index})" title="Edit">${editIcon}</button>
+                            <button class="action-btn btn-remove" onclick="promptRemoveIngredient('${currentRecipeId}', ${index})" title="Remove">${deleteIcon}</button>
                         </div>
                     `;
                 }
@@ -470,12 +487,12 @@
                             ` : ''}
                             ${ing.isSub && subRecipe ? `
                                 <span class="sub-recipe-link" onclick="toggleSub('${currentPath}')">
-                                    <span class="toggle-icon ${expandedNodes.has(currentPath) ? 'open' : ''}">▶</span> ${displayName}
+                                    <span class="toggle-icon ${expandedNodes.has(currentPath) ? 'open' : ''}">${chevronIcon}</span> ${displayName}
                                 </span>
                             ` : `<span>${displayName}</span>`}
                         </span>
                         <span style="display:flex; align-items:center;">
-                            <span style="color:var(--primary);"><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span>
+                            ${valueHtml}
                             ${actionButtons}
                         </span>
                     </div>
@@ -502,19 +519,20 @@
             const totalRecipeWeight = calculateRecipeWeight(id) * currentScale;
             const currentCat = recipe.category || 'Uncategorized';
 
+            // Cleaned up header layout to move utilities out of the way of the title
             appDiv.innerHTML = `
                 <header style="flex-direction: column; align-items: stretch; padding-bottom: 0.8rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.8rem;">
                         <button class="small outline" onclick="goToFolder('${currentCat.replace(/'/g, "\\'")}')">← Folder</button>
-                        <div style="flex: 1; margin: 0 1rem;">
-                            <input type="text" class="header-input" value="${recipe.name.replace(/"/g, '&quot;')}" onblur="updateRecipeName('${id}', this.value)" onkeypress="if(event.key === 'Enter') this.blur();">
-                        </div>
                         <div style="display:flex; gap:0.3rem;">
                             <button class="small outline" onclick="promptCopyRecipe('${id}')">Copy</button>
                             <button class="small outline danger" style="border-color:var(--danger); color:var(--danger);" onclick="promptDeleteRecipe('${id}')">Del</button>
                         </div>
                     </div>
-                    <div style="text-align: center; margin-top: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                    <div style="text-align: center; width: 100%;">
+                        <input type="text" class="header-input" value="${recipe.name.replace(/"/g, '&quot;')}" onblur="updateRecipeName('${id}', this.value)" onkeypress="if(event.key === 'Enter') this.blur();" style="margin-bottom: 0.2rem;">
+                    </div>
+                    <div style="text-align: center; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 0.3rem;">
                         <span style="font-size: 0.8rem; opacity: 0.8; color:var(--text-muted);">Folder:</span>
                         <select class="header-select" onchange="updateRecipeCategory('${id}', this.value)">
                             ${folders.map(f => `<option value="${f}" ${f === currentCat ? 'selected' : ''}>${f}</option>`).join('')}
