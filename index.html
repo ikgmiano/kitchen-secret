@@ -171,9 +171,9 @@
         .btn-link { color: #8ecae6; font-size: 1.1rem; }
         .btn-remove { color: var(--danger); font-size: 1.3rem; line-height: 1; }
         
-        .reorder-controls { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
-        .reorder-btn { background: var(--sub-bg); color: var(--primary); border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
-        .reorder-btn:active { background: var(--primary); color: var(--bg); }
+        .reorder-controls { display: flex; flex-direction: column; gap: 0; margin-right: 12px; }
+        .reorder-btn { background: transparent; color: var(--text-muted); border: none; padding: 2px 6px; font-size: 0.75rem; cursor: pointer; opacity: 0.7; transition: color 0.2s; }
+        .reorder-btn:active { opacity: 1; color: var(--primary); }
         .drag-handle { cursor: grab; color: var(--border); margin-right: 10px; font-size: 1.2rem; user-select: none; display: none; }
         @media (min-width: 768px) {
             .drag-handle { display: inline-block; }
@@ -407,7 +407,10 @@
                         `).join('')}
                     </div>
                     ${folderName !== 'Uncategorized' ? `
-                        <button class="danger outline" style="width:100%; margin-top: 1rem; padding: 0.8rem;" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
+                        <div style="display:flex; gap:0.5rem; margin-top: 1rem; width:100%;">
+                            <button class="outline" style="flex:1; padding: 0.8rem;" onclick="promptRenameFolder('${folderName.replace(/'/g, "\\'")}')">Rename Folder</button>
+                            <button class="danger outline" style="flex:1; padding: 0.8rem;" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
+                        </div>
                     ` : ''}
                 </div>
             `;
@@ -631,6 +634,39 @@
             }
         };
 
+        window.promptRenameFolder = (folderName) => {
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h2 style="border:none;">Rename Folder</h2>
+                        <div class="form-group">
+                            <input type="text" id="rename-folder-name" value="${folderName.replace(/"/g, '&quot;')}" autofocus>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="outline" onclick="closeModal()">Cancel</button>
+                            <button onclick="confirmRenameFolder('${folderName.replace(/'/g, "\\'")}')">Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const input = document.getElementById('rename-folder-name');
+                if (input) { input.focus(); input.select(); }
+            }, 100);
+        };
+
+        window.confirmRenameFolder = (oldName) => {
+            const newName = document.getElementById('rename-folder-name').value.trim();
+            if (!newName || newName === oldName) return closeModal();
+            if (folders.includes(newName)) return showToast("Folder already exists.");
+
+            folders = folders.map(f => f === oldName ? newName : f);
+            Object.values(recipes).forEach(r => {
+                if (r.category === oldName) r.category = newName;
+            });
+            saveData(); closeModal(); goToFolder(newName);
+        };
+
         window.promptDeleteFolder = (folderName) => {
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
@@ -715,10 +751,6 @@
 
         window.promptAddSubRecipe = (recipeId) => {
             const availableRecipes = Object.values(recipes).filter(r => r.id !== recipeId);
-            if (availableRecipes.length === 0) {
-                showToast("No components available. Create one first!");
-                return;
-            }
 
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
@@ -728,7 +760,9 @@
                             <label>Select Component</label>
                             <select id="sub-recipe-select" onchange="updateSubAddDefaults()">
                                 ${availableRecipes.map(r => `<option value="${r.id}" data-batch="${r.baseBatch||1}">${r.name} (${r.category || 'Uncategorized'})</option>`).join('')}
+                                <option value="NEW">+ Create New Component</option>
                             </select>
+                            <input type="text" id="new-sub-name" placeholder="New Component Name" style="display:none; margin-top:0.5rem;">
                         </div>
                         <div class="form-group">
                             <label>Scale By</label>
@@ -754,10 +788,18 @@
 
         window.updateSubAddDefaults = () => {
             const select = document.getElementById('sub-recipe-select');
+            const newNameInput = document.getElementById('new-sub-name');
             const mode = document.getElementById('sub-scale-mode').value;
-            if (mode === 'batch' && select.options.length > 0) {
-                const batch = select.options[select.selectedIndex].getAttribute('data-batch');
-                document.getElementById('sub-qty').value = batch;
+            
+            if (select.value === 'NEW') {
+                newNameInput.style.display = 'block';
+                if (mode === 'batch') document.getElementById('sub-qty').value = 1;
+            } else {
+                newNameInput.style.display = 'none';
+                if (mode === 'batch' && select.options.length > 0) {
+                    const batch = select.options[select.selectedIndex].getAttribute('data-batch');
+                    document.getElementById('sub-qty').value = batch;
+                }
             }
         };
 
@@ -779,10 +821,30 @@
         };
 
         window.confirmAddSubRecipe = (recipeId) => {
-            const subId = document.getElementById('sub-recipe-select').value;
+            let subId = document.getElementById('sub-recipe-select').value;
             const mode = document.getElementById('sub-scale-mode').value;
             const val = parseFloat(document.getElementById('sub-qty').value) || 1;
-            if (!subId) return;
+            
+            if (subId === 'NEW') {
+                const newName = document.getElementById('new-sub-name').value.trim();
+                if (!newName) {
+                    showToast("Please enter a name for the new component.");
+                    return;
+                }
+                subId = generateId();
+                recipes[subId] = { 
+                    id: subId, 
+                    name: newName, 
+                    category: 'Subcomponents', 
+                    orderIndex: Date.now(), 
+                    baseBatch: 1, 
+                    ingredients: [], 
+                    notes: "" 
+                };
+                syncDataStructure();
+                saveData();
+                showToast(`Created new component: ${newName}`);
+            } else if (!subId) return;
 
             const ing = { name: recipes[subId].name, unit: 'g', isSub: true, subId: subId, scaleMode: mode };
             if (mode === 'weight') { ing.targetWeight = val; ing.qty = 1; }
