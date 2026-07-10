@@ -9,6 +9,8 @@
     <link rel="apple-touch-icon" href="./icon.png">
     <meta name="theme-color" content="#3a151b">
     
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap');
 
@@ -77,7 +79,7 @@
         button.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
         button.small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
 
-        textarea, input[type="number"], input[type="text"]:not(.header-input), select { 
+        textarea, input[type="number"], input[type="text"]:not(.header-input), input[type="password"], select { 
             width: 100%; 
             padding: 0.8rem; 
             border: 1px solid var(--border); 
@@ -101,8 +103,8 @@
             padding: 0.8rem 0.5rem; 
             border-bottom: 1px solid var(--border);
             transition: background 0.2s;
+            background: var(--card); /* required for sortable styling */
         }
-        .ingredient-item.drag-over { border-top: 2px solid var(--primary); }
         .ingredient-item:last-child { border-bottom: none; }
         
         .sub-recipe-link { color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
@@ -171,14 +173,9 @@
         .btn-link { color: #8ecae6; }
         .btn-remove { color: var(--danger); }
         
-        .reorder-controls { display: flex; flex-direction: column; gap: 0; margin-right: 12px; }
-        .reorder-btn { background: transparent; color: var(--text-muted); border: none; padding: 2px 6px; font-size: 0.75rem; cursor: pointer; opacity: 0.7; transition: color 0.2s; }
-        .reorder-btn:active { opacity: 1; color: var(--primary); }
-        .drag-handle { cursor: grab; color: var(--border); margin-right: 10px; font-size: 1.2rem; user-select: none; display: none; }
-        @media (min-width: 768px) {
-            .drag-handle { display: inline-block; }
-            .reorder-controls { display: none; }
-        }
+        .drag-handle { cursor: grab; color: var(--border); margin-right: 12px; font-size: 1.4rem; user-select: none; display: flex; align-items: center; }
+        .drag-handle:active { cursor: grabbing; color: var(--primary); }
+        .sortable-ghost { opacity: 0.4; }
     </style>
 </head>
 <body>
@@ -192,8 +189,9 @@
         let currentView = 'home'; // 'home', 'folder', 'recipe'
         let currentFolder = null;
         let currentRecipeId = null;
-        let currentScale = 1; // Temporary view multiplier
+        let currentScale = 1; 
         let expandedNodes = new Set(); 
+        let cloudSaveTimeout;
 
         // Data Migration & Fallback
         if (Object.keys(recipes).length === 0) {
@@ -207,7 +205,7 @@
                     { name: "Cocoa powder", qty: 50, unit: "g", isSub: false }
                 ], notes: "Bake at 180°C." }
             };
-            saveData();
+            saveData(false);
         }
 
         function syncDataStructure() {
@@ -221,10 +219,20 @@
         }
         syncDataStructure();
 
-        function saveData() { 
+        function triggerCloudSave() {
+            const config = JSON.parse(localStorage.getItem('kitchen_secret_gh_config')) || {};
+            if (config.autoSave && config.token) {
+                clearTimeout(cloudSaveTimeout);
+                cloudSaveTimeout = setTimeout(() => saveToCloud(false), 3000);
+            }
+        }
+
+        function saveData(triggerCloud = true) { 
             localStorage.setItem('kitchen_secret_recipes', JSON.stringify(recipes)); 
             localStorage.setItem('kitchen_secret_folders', JSON.stringify(folders));
+            if (triggerCloud) triggerCloudSave();
         }
+        
         function generateId() { return Date.now().toString() + Math.floor(Math.random()*1000); }
 
         // Weight & Scaling Core Logic
@@ -275,57 +283,59 @@
             if (currentView === 'home') renderHome();
             else if (currentView === 'folder') renderFolder(currentFolder);
             else if (currentView === 'recipe') renderRecipe(currentRecipeId);
+            initSortable(); 
         }
 
-        // --- Drag & Drop (Desktop) ---
-        let draggedIndex = null;
-        window.dragStart = (e, index) => { draggedIndex = index; e.dataTransfer.effectAllowed = "move"; };
-        window.dragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; };
-        window.drop = (e, targetIndex) => {
-            e.preventDefault();
-            if (draggedIndex === null || draggedIndex === targetIndex) return;
-            
-            if (currentView === 'home') {
-                const moved = folders.splice(draggedIndex, 1)[0];
-                folders.splice(targetIndex, 0, moved);
-            } else if (currentView === 'folder') {
-                // Folder recipe reordering via D&D requires custom logic, let's stick to Up/Down for recipes to avoid sorting bugs
-            } else if (currentView === 'recipe') {
-                const ings = recipes[currentRecipeId].ingredients;
-                const moved = ings.splice(draggedIndex, 1)[0];
-                ings.splice(targetIndex, 0, moved);
+        // --- SortableJS Initialization ---
+        function initSortable() {
+            const folderList = document.getElementById('folder-list');
+            if (folderList) {
+                Sortable.create(folderList, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: function (evt) {
+                        const item = folders.splice(evt.oldIndex, 1)[0];
+                        folders.splice(evt.newIndex, 0, item);
+                        saveData();
+                    }
+                });
             }
-            saveData(); render();
-        };
 
-        // --- Up/Down Mobile Reordering ---
-        window.moveItem = (type, index, direction) => {
-            if (type === 'folder') {
-                if (index + direction < 0 || index + direction >= folders.length) return;
-                const temp = folders[index];
-                folders[index] = folders[index + direction];
-                folders[index + direction] = temp;
-            } else if (type === 'recipeList') {
-                const folderRecipes = Object.values(recipes)
-                    .filter(r => (r.category || 'Uncategorized') === currentFolder)
-                    .sort((a,b) => a.orderIndex - b.orderIndex);
-                if (index + direction < 0 || index + direction >= folderRecipes.length) return;
-                
-                const currentId = folderRecipes[index].id;
-                const targetId = folderRecipes[index + direction].id;
-                
-                const tempOrder = recipes[currentId].orderIndex;
-                recipes[currentId].orderIndex = recipes[targetId].orderIndex;
-                recipes[targetId].orderIndex = tempOrder;
-            } else if (type === 'ingredient') {
-                const ings = recipes[currentRecipeId].ingredients;
-                if (index + direction < 0 || index + direction >= ings.length) return;
-                const temp = ings[index];
-                ings[index] = ings[index + direction];
-                ings[index + direction] = temp;
+            const recipeList = document.getElementById('recipe-list');
+            if (recipeList) {
+                Sortable.create(recipeList, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: function (evt) {
+                        const folderRecipes = Object.values(recipes)
+                            .filter(r => (r.category || 'Uncategorized') === currentFolder)
+                            .sort((a,b) => a.orderIndex - b.orderIndex);
+                        
+                        const item = folderRecipes.splice(evt.oldIndex, 1)[0];
+                        folderRecipes.splice(evt.newIndex, 0, item);
+                        
+                        folderRecipes.forEach((r, idx) => {
+                            recipes[r.id].orderIndex = Date.now() + idx;
+                        });
+                        saveData();
+                    }
+                });
             }
-            saveData(); render();
-        };
+
+            const ingList = document.getElementById('ingredients-list');
+            if (ingList) {
+                Sortable.create(ingList, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: function (evt) {
+                        const ings = recipes[currentRecipeId].ingredients;
+                        const item = ings.splice(evt.oldIndex, 1)[0];
+                        ings.splice(evt.newIndex, 0, item);
+                        saveData();
+                    }
+                });
+            }
+        }
 
         // --- Views ---
         function renderHome() {
@@ -334,32 +344,31 @@
 
             appDiv.innerHTML = `
                 <header>
-                    <button class="small outline" onclick="document.getElementById('importFile').click()">Import</button>
-                    <input type="file" onchange="importData(event)" style="display:none" id="importFile">
+                    <button class="small outline" onclick="promptCloudConfig()">☁️ Sync</button>
                     
                     <div class="brand-title">
                         <h1>forms by yen</h1>
                         <p>curated flavors</p>
                     </div>
 
-                    <button class="small outline" onclick="exportData()">Export</button>
+                    <div style="display:flex; gap:0.3rem;">
+                        <input type="file" onchange="importData(event)" style="display:none" id="importFile">
+                        <button class="small outline" onclick="document.getElementById('importFile').click()">Import</button>
+                        <button class="small outline" onclick="exportData()">Export</button>
+                    </div>
                 </header>
                 <div class="container" style="margin-top: 1rem;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
                         <h2>Categories</h2>
                         <button class="small" onclick="promptAddFolder()">+ Folder</button>
                     </div>
-                    <div class="card">
+                    <div class="card" id="folder-list">
                         ${folders.length === 0 ? '<div class="empty-state">No folders found.</div>' : ''}
-                        ${folders.map((f, i) => {
+                        ${folders.map(f => {
                             const count = Object.values(recipes).filter(r => (r.category || 'Uncategorized') === f).length;
                             return `
-                                <div class="ingredient-item" draggable="true" ondragstart="dragStart(event, ${i})" ondragover="dragOver(event)" ondrop="drop(event, ${i})">
+                                <div class="ingredient-item">
                                     <div style="display:flex; align-items:center;">
-                                        <div class="reorder-controls">
-                                            <button class="reorder-btn" onclick="moveItem('folder', ${i}, -1)" ${i===0?'disabled':''}>▲</button>
-                                            <button class="reorder-btn" onclick="moveItem('folder', ${i}, 1)" ${i===folders.length-1?'disabled':''}>▼</button>
-                                        </div>
                                         <span class="drag-handle">☰</span>
                                         <div onclick="goToFolder('${f.replace(/'/g, "\\'")}')" style="cursor:pointer;">
                                             <h3 style="margin:0; font-family:'Playfair Display', serif;">${f}</h3>
@@ -382,21 +391,24 @@
                 .sort((a,b) => a.orderIndex - b.orderIndex);
             
             appDiv.innerHTML = `
-                <header>
-                    <button class="small outline" onclick="goHome()">← Back</button>
-                    <h1 style="text-align:center; flex:1; font-size:1.4rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0 0.5rem; font-family:'Playfair Display', serif;">${folderName}</h1>
-                    <button class="small" onclick="promptAddRecipe('${folderName.replace(/'/g, "\\'")}')">+ Recipe</button>
+                <header style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.8rem;">
+                        <button class="small outline" onclick="goHome()">← Back</button>
+                        <button class="small" onclick="promptAddRecipe('${folderName.replace(/'/g, "\\'")}')">+ Recipe</button>
+                    </div>
+                    <div style="text-align: center; width: 100%;">
+                        <input type="text" class="header-input" value="${folderName.replace(/"/g, '&quot;')}" 
+                               onblur="confirmRenameFolder('${folderName.replace(/'/g, "\\'")}', this.value)" 
+                               onkeypress="if(event.key === 'Enter') this.blur();">
+                    </div>
                 </header>
                 <div class="container" style="margin-top: 1rem;">
-                    <div class="card">
+                    <div class="card" id="recipe-list">
                         ${folderRecipes.length === 0 ? '<div class="empty-state">Folder is empty. Add a recipe!</div>' : ''}
-                        ${folderRecipes.map((r, i) => `
+                        ${folderRecipes.map(r => `
                             <div class="ingredient-item">
                                 <div style="display:flex; align-items:center; flex:1;">
-                                    <div class="reorder-controls">
-                                        <button class="reorder-btn" onclick="moveItem('recipeList', ${i}, -1)" ${i===0?'disabled':''}>▲</button>
-                                        <button class="reorder-btn" onclick="moveItem('recipeList', ${i}, 1)" ${i===folderRecipes.length-1?'disabled':''}>▼</button>
-                                    </div>
+                                    <span class="drag-handle">☰</span>
                                     <div onclick="goToRecipe('${r.id}')" style="cursor:pointer; flex:1;">
                                         <h3 style="margin:0; color:var(--text);">${r.name}</h3>
                                         <small style="color:var(--text-muted);">Yield: ${r.baseBatch}</small>
@@ -407,10 +419,7 @@
                         `).join('')}
                     </div>
                     ${folderName !== 'Uncategorized' ? `
-                        <div style="display:flex; gap:0.5rem; margin-top: 1rem; width:100%;">
-                            <button class="outline" style="flex:1; padding: 0.8rem;" onclick="promptRenameFolder('${folderName.replace(/'/g, "\\'")}')">Rename Folder</button>
-                            <button class="danger outline" style="flex:1; padding: 0.8rem;" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
-                        </div>
+                        <button class="danger outline" style="width:100%; margin-top: 1rem; padding: 0.8rem;" onclick="promptDeleteFolder('${folderName.replace(/'/g, "\\'")}')">Delete Folder</button>
                     ` : ''}
                 </div>
             `;
@@ -418,8 +427,6 @@
 
         function renderIngredientTree(ingredients, parentScale, level, pathId) {
             let html = '';
-            
-            // Replaced Emojis with elegant inline SVGs
             const linkIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
             const editIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>`;
             const deleteIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -439,7 +446,7 @@
                     if (ing.scaleMode === 'weight') {
                         displayValue = (ing.targetWeight || 0) * parentScale;
                         displayUnit = 'g';
-                        isTargetWeight = true; // Flag for layout change
+                        isTargetWeight = true;
                     } else if (ing.scaleMode === 'batch') {
                         displayValue = (ing.targetBatch || 0) * parentScale;
                         displayUnit = 'batch';
@@ -452,7 +459,6 @@
                     displayUnit = 'g';
                 }
 
-                // Layout fix for Target Gram
                 let valueHtml = '';
                 if (isTargetWeight) {
                     valueHtml = `<div style="text-align: right; line-height: 1.1;"><span style="color:var(--primary);"><b>${Number.isInteger(displayValue) ? displayValue : displayValue.toFixed(2)}</b> ${displayUnit}</span><br><small style="font-size: 0.7rem; color: var(--text-muted);">(target)</small></div>`;
@@ -472,19 +478,11 @@
                         </div>
                     `;
                 }
-
-                const dragProps = level === 0 ? `draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})"` : '';
                 
                 html += `
-                    <div class="ingredient-item" ${dragProps} style="margin-left: ${level * 10}px; background: ${ing.isSub && expandedNodes.has(currentPath) ? 'var(--sub-bg)' : 'transparent'}; border-left: ${level > 0 ? '1px solid var(--border)' : 'none'};">
+                    <div class="ingredient-item" style="margin-left: ${level * 10}px; background: ${ing.isSub && expandedNodes.has(currentPath) ? 'var(--sub-bg)' : 'transparent'}; border-left: ${level > 0 ? '1px solid var(--border)' : 'none'};">
                         <span style="display:flex; align-items:center;">
-                            ${level === 0 ? `
-                                <div class="reorder-controls">
-                                    <button class="reorder-btn" onclick="moveItem('ingredient', ${index}, -1)" ${index===0?'disabled':''}>▲</button>
-                                    <button class="reorder-btn" onclick="moveItem('ingredient', ${index}, 1)" ${index===ingredients.length-1?'disabled':''}>▼</button>
-                                </div>
-                                <span class="drag-handle" title="Drag to reorder">☰</span>
-                            ` : ''}
+                            ${level === 0 ? `<span class="drag-handle" title="Drag to reorder">☰</span>` : ''}
                             ${ing.isSub && subRecipe ? `
                                 <span class="sub-recipe-link" onclick="toggleSub('${currentPath}')">
                                     <span class="toggle-icon ${expandedNodes.has(currentPath) ? 'open' : ''}">${chevronIcon}</span> ${displayName}
@@ -519,7 +517,6 @@
             const totalRecipeWeight = calculateRecipeWeight(id) * currentScale;
             const currentCat = recipe.category || 'Uncategorized';
 
-            // Cleaned up header layout to move utilities out of the way of the title
             appDiv.innerHTML = `
                 <header style="flex-direction: column; align-items: stretch; padding-bottom: 0.8rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.8rem;">
@@ -581,7 +578,7 @@
             `;
         }
 
-        // --- Recipe Actions ---
+        // --- Basic UI Actions ---
         window.toggleSub = (pathId) => { expandedNodes.has(pathId) ? expandedNodes.delete(pathId) : expandedNodes.add(pathId); render(); };
         window.goToFolder = (folderName) => { currentView = 'folder'; currentFolder = folderName; render(); };
         window.goHome = () => { currentView = 'home'; currentFolder = null; currentRecipeId = null; currentScale = 1; expandedNodes.clear(); render(); };
@@ -608,6 +605,20 @@
             goToFolder(newCat);
         };
 
+        window.confirmRenameFolder = (oldName, newName) => {
+            newName = newName.trim();
+            if (!newName || newName === oldName) return render();
+            if (folders.includes(newName)) { showToast("Folder already exists."); return render(); }
+
+            folders = folders.map(f => f === oldName ? newName : f);
+            Object.values(recipes).forEach(r => {
+                if (r.category === oldName) r.category = newName;
+            });
+            saveData(); 
+            currentFolder = newName; 
+            render();
+        };
+
         window.promptCopyRecipe = (id) => {
             const original = recipes[id];
             const newId = generateId();
@@ -621,9 +632,113 @@
             goToRecipe(newId);
         };
 
-        // --- Modal System ---
         function closeModal() { modalRoot.innerHTML = ''; }
 
+        // --- Cloud Sync Feature (Hardcoded Config) ---
+        window.promptCloudConfig = () => {
+            const config = JSON.parse(localStorage.getItem('kitchen_secret_gh_config')) || {};
+            modalRoot.innerHTML = `
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-card" onclick="event.stopPropagation()">
+                        <h2 style="border:none;">Cloud Sync</h2>
+                        <div class="form-group">
+                            <label>GitHub Token (PAT)</label>
+                            <input type="password" id="gh-token" value="${config.token || ''}" placeholder="ghp_...">
+                        </div>
+                        <label style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem; cursor:pointer;">
+                            <input type="checkbox" id="gh-autosave" style="width:auto;" ${config.autoSave ? 'checked' : ''}>
+                            <span>Auto-save to cloud on changes</span>
+                        </label>
+                        <div class="modal-actions" style="justify-content: space-between; margin-top: 1.5rem;">
+                            <button class="outline" onclick="loadFromCloud()">↓ Load</button>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button class="outline" onclick="saveToCloud(true)">↑ Save</button>
+                                <button onclick="saveCloudConfig()">Done</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.saveCloudConfig = () => {
+            const config = {
+                token: document.getElementById('gh-token').value.trim(),
+                autoSave: document.getElementById('gh-autosave').checked
+            };
+            localStorage.setItem('kitchen_secret_gh_config', JSON.stringify(config));
+            closeModal();
+            showToast("Cloud config saved.");
+            if (config.autoSave) triggerCloudSave();
+        };
+
+        window.saveToCloud = async (manual = false) => {
+            const config = JSON.parse(localStorage.getItem('kitchen_secret_gh_config'));
+            if (!config || !config.token) {
+                if (manual) showToast("Configure cloud settings first!");
+                return;
+            }
+            if (manual) showToast("Saving to cloud...");
+            
+            // Hardcoded Routing
+            const owner = 'therealikage';
+            const repo = 'yen-recipes-cloud';
+            const path = 'recipes.json';
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const headers = { 'Authorization': `token ${config.token}`, 'Accept': 'application/vnd.github.v3+json' };
+            
+            try {
+                let sha = '';
+                const getRes = await fetch(url, { headers });
+                if (getRes.ok) sha = (await getRes.json()).sha;
+                
+                const payload = btoa(unescape(encodeURIComponent(JSON.stringify({recipes, folders}))));
+                const body = JSON.stringify({ message: 'Kitchen Secret Sync', content: payload, sha });
+                
+                const putRes = await fetch(url, { method: 'PUT', headers, body });
+                if (putRes.ok && manual) showToast("Successfully saved to cloud!");
+                else if (!putRes.ok && manual) showToast("Cloud save failed.");
+            } catch(e) { 
+                console.error(e);
+                if (manual) showToast("Network error during save.");
+            }
+        };
+
+        window.loadFromCloud = async () => {
+            const config = JSON.parse(localStorage.getItem('kitchen_secret_gh_config'));
+            if (!config || !config.token) return showToast("Configure cloud settings first!");
+            
+            showToast("Loading from cloud...");
+            
+            // Hardcoded Routing
+            const owner = 'therealikage';
+            const repo = 'yen-recipes-cloud';
+            const path = 'recipes.json';
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const headers = { 'Authorization': `token ${config.token}`, 'Accept': 'application/vnd.github.v3+json' };
+            
+            try {
+                const res = await fetch(url, { headers });
+                if (!res.ok) throw new Error("Failed to fetch");
+                const data = await res.json();
+                const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                
+                if (decoded.recipes) {
+                    recipes = decoded.recipes;
+                    folders = decoded.folders || [];
+                    syncDataStructure();
+                    saveData(false); // Don't loop autosave on load
+                    closeModal();
+                    render();
+                    showToast("Successfully loaded from cloud!");
+                }
+            } catch(e) {
+                console.error(e);
+                showToast("Failed to load from cloud.");
+            }
+        };
+
+        // --- Modals ---
         window.promptAddFolder = () => {
             modalRoot.innerHTML = `
                 <div class="modal-overlay" onclick="closeModal()">
@@ -650,39 +765,6 @@
             } else if (folders.includes(name)) {
                 showToast("Folder already exists.");
             }
-        };
-
-        window.promptRenameFolder = (folderName) => {
-            modalRoot.innerHTML = `
-                <div class="modal-overlay" onclick="closeModal()">
-                    <div class="modal-card" onclick="event.stopPropagation()">
-                        <h2 style="border:none;">Rename Folder</h2>
-                        <div class="form-group">
-                            <input type="text" id="rename-folder-name" value="${folderName.replace(/"/g, '&quot;')}" autofocus>
-                        </div>
-                        <div class="modal-actions">
-                            <button class="outline" onclick="closeModal()">Cancel</button>
-                            <button onclick="confirmRenameFolder('${folderName.replace(/'/g, "\\'")}')">Save</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            setTimeout(() => {
-                const input = document.getElementById('rename-folder-name');
-                if (input) { input.focus(); input.select(); }
-            }, 100);
-        };
-
-        window.confirmRenameFolder = (oldName) => {
-            const newName = document.getElementById('rename-folder-name').value.trim();
-            if (!newName || newName === oldName) return closeModal();
-            if (folders.includes(newName)) return showToast("Folder already exists.");
-
-            folders = folders.map(f => f === oldName ? newName : f);
-            Object.values(recipes).forEach(r => {
-                if (r.category === oldName) r.category = newName;
-            });
-            saveData(); closeModal(); goToFolder(newName);
         };
 
         window.promptDeleteFolder = (folderName) => {
@@ -994,7 +1076,6 @@
 
         window.confirmRemoveIngredient = (recipeId, index) => { recipes[recipeId].ingredients.splice(index, 1); saveData(); closeModal(); render(); };
 
-        // --- Import / Export ---
         window.exportData = () => {
             const data = localStorage.getItem('kitchen_secret_recipes');
             const blob = new Blob([data], {type: 'application/json'});
@@ -1009,7 +1090,7 @@
             reader.onload = (e) => { 
                 recipes = JSON.parse(e.target.result); 
                 syncDataStructure(); 
-                saveData(); 
+                saveData(false); 
                 render(); 
                 showToast("Import successful!");
             };
