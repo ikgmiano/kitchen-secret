@@ -221,7 +221,8 @@
 
         function triggerCloudSave() {
             const config = JSON.parse(localStorage.getItem('kitchen_secret_gh_config')) || {};
-            if (config.autoSave && config.token) {
+            // If token exists, always auto-save in background after 3 seconds
+            if (config.token) {
                 clearTimeout(cloudSaveTimeout);
                 cloudSaveTimeout = setTimeout(() => saveToCloud(false), 3000);
             }
@@ -645,10 +646,6 @@
                             <label>GitHub Token (PAT)</label>
                             <input type="password" id="gh-token" value="${config.token || ''}" placeholder="ghp_...">
                         </div>
-                        <label style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem; cursor:pointer;">
-                            <input type="checkbox" id="gh-autosave" style="width:auto;" ${config.autoSave ? 'checked' : ''}>
-                            <span>Auto-save to cloud on changes</span>
-                        </label>
                         <div class="modal-actions" style="justify-content: space-between; margin-top: 1.5rem;">
                             <button class="outline" onclick="loadFromCloud()">↓ Load</button>
                             <div style="display:flex; gap:0.5rem;">
@@ -663,13 +660,11 @@
 
         window.saveCloudConfig = () => {
             const config = {
-                token: document.getElementById('gh-token').value.trim(),
-                autoSave: document.getElementById('gh-autosave').checked
+                token: document.getElementById('gh-token').value.trim()
             };
             localStorage.setItem('kitchen_secret_gh_config', JSON.stringify(config));
             closeModal();
             showToast("Cloud config saved.");
-            if (config.autoSave) triggerCloudSave();
         };
 
         window.saveToCloud = async (manual = false) => {
@@ -1077,7 +1072,8 @@
         window.confirmRemoveIngredient = (recipeId, index) => { recipes[recipeId].ingredients.splice(index, 1); saveData(); closeModal(); render(); };
 
         window.exportData = () => {
-            const data = localStorage.getItem('kitchen_secret_recipes');
+            // FIX: Export matches cloud payload structure so local backups retain folders!
+            const data = JSON.stringify({recipes, folders});
             const blob = new Blob([data], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1088,9 +1084,18 @@
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = (e) => { 
-                recipes = JSON.parse(e.target.result); 
+                const parsed = JSON.parse(e.target.result);
+                
+                // FIX: Intelligently detect if this is a Cloud JSON or a Legacy Local JSON
+                if (parsed.recipes) {
+                    recipes = parsed.recipes;
+                    if (parsed.folders) folders = parsed.folders;
+                } else {
+                    recipes = parsed;
+                }
+                
                 syncDataStructure(); 
-                saveData(false); 
+                saveData(false); // Does NOT trigger cloud auto-save!
                 render(); 
                 showToast("Import successful!");
             };
